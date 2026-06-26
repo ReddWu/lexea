@@ -87,25 +87,22 @@
 - "忘了"的词会在**本次**复习里再次出现;其余按算出的天数到期再来。
 - 评分会写回本地;若开了云同步,也镜像到 InsForge,供 openclaw 判断"哪些词不牢"。
 
-## 四、openclaw 接入(让你的 AI 多用你的弱词)
+## 四、让你的 AI 多用你的弱词
 
-见 [`openclaw/`](openclaw/)。两个零依赖 Node 脚本(读写云端 `words` 表,需开云同步):
+需开启云同步(弱词数据在云端)。有两种接法:
 
-```bash
-export INSFORGE_URL=https://你的.us-east.insforge.app
-export INSFORGE_ANON_KEY=anon_...
-node openclaw/weak-words.mjs 30   # 输出可拼进 system prompt 的"弱词"清单(越弱越靠前)
-node openclaw/mark-used.mjs 单词   # AI 用过某词后调用,降低它再次出现的权重
-```
+**A. ChatGPT(Plus,推荐)** — 见 [`chatgpt/`](chatgpt/)。
+已部署一个受密钥保护的接口 `{oss_host}/functions/weak-words`。建一个 **Custom GPT**,把 [`chatgpt/instructions.md`](chatgpt/instructions.md) 设为指令、[`chatgpt/openapi.yaml`](chatgpt/openapi.yaml) 设为 Action,聊天时它会**实时拉取你最新的弱词**并自然地用进对话,自动更新。步骤见 `chatgpt/README.md`。
 
-把 `weak-words.mjs` 的输出拼到你 agent 的 system prompt;每次开聊重跑即"自动更新"。详见 `openclaw/README.md`。
+**B. 自建 agent / 脚本** — 见 [`openclaw/`](openclaw/)。
+两个零依赖 Node 脚本:`weak-words.mjs`(输出可拼进 system prompt 的弱词清单)+ `mark-used.mjs`(回写使用次数)。适合你能改 prompt 的自建 agent。
 
 ## 路线图
 
 - [x] 采集扩展(本地优先):选词 + 原句 + 自动保存 + 导出
 - [x] 可选 InsForge 云镜像表(PostgREST 接口,anon 可读写)
 - [x] **扩展内复习页**(SM-2 间隔重复,纯本地):到期出卡,正面词、背面释义+原句,打分回写 SRS
-- [x] **openclaw 接入套件**:`weak-words` 注入弱词 + `mark-used` 回写使用
+- [x] **AI 接入**:ChatGPT Custom GPT(`weak-words` 边缘函数 + Action)/ 自建 agent 脚本
 - [ ] 云复习网站(Next.js + Vercel,读云端表,跨设备)— 可选
 - [ ] FSRS 升级(替换 SM-2,用 `stability`/`difficulty` 字段)— 可选
 
