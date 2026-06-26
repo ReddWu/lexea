@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>复习 · 单词本</title>
+  <style>
+    :root{color-scheme:light dark;}
+    *{box-sizing:border-box;}
+    body{font:16px/1.6 -apple-system,system-ui,sans-serif;margin:0;
+      background:#f7f7f8;color:#111827;display:flex;flex-direction:column;min-height:100vh;}
+    header{display:flex;justify-content:space-between;align-items:center;
+      padding:14px 22px;border-bottom:1px solid #e5e7eb;background:#fff;}
+    header .title{font-weight:700;}
+    header .stats{font-size:13px;color:#6b7280;}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .card{width:100%;max-width:640px;background:#fff;border:1px solid #e5e7eb;
+      border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.06);padding:36px 32px;}
+    .word{font-size:38px;font-weight:800;text-align:center;letter-spacing:.5px;}
+    .src{text-align:center;margin-top:6px;}
+    .src a{font-size:12px;color:#9ca3af;text-decoration:none;}
+    .back{margin-top:24px;border-top:1px dashed #e5e7eb;padding-top:20px;display:none;}
+    .def{font-size:15px;color:#374151;background:#f9fafb;border-radius:10px;padding:12px 14px;margin-bottom:16px;white-space:pre-wrap;}
+    .def .pos{color:#9ca3af;font-style:italic;margin-right:6px;}
+    .ctx-label{font-size:12px;color:#9ca3af;margin:14px 0 6px;font-weight:600;}
+    .ctx{font-size:15px;color:#1f2937;padding:9px 12px;border-left:3px solid #c7d2fe;background:#f5f7ff;border-radius:0 8px 8px 0;margin-bottom:8px;}
+    .ctx mark{background:#fde68a;border-radius:3px;padding:0 2px;}
+    .ctx .from{display:block;font-size:11px;color:#9ca3af;margin-top:3px;}
+    .controls{margin-top:26px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+    button{font:600 15px/1 -apple-system,system-ui,sans-serif;border:none;border-radius:10px;
+      padding:13px 18px;cursor:pointer;color:#fff;}
+    button:active{transform:translateY(1px);}
+    .reveal{background:#2563eb;min-width:220px;padding:14px;}
+    .g1{background:#dc2626;} .g2{background:#d97706;} .g3{background:#16a34a;} .g4{background:#0891b2;}
+    .grade small{display:block;font-weight:400;font-size:11px;opacity:.85;margin-top:3px;}
+    .done{text-align:center;color:#6b7280;}
+    .done .big{font-size:40px;}
+    .hintbar{text-align:center;font-size:12px;color:#9ca3af;padding:8px;}
+  </style>
+</head>
+<body>
+  <header>
+    <span class="title">📚 复习单词</span>
+    <span class="stats" id="stats"></span>
+  </header>
+  <main>
+    <div class="card" id="card">
+      <!-- filled by review.js -->
+    </div>
+  </main>
+  <div class="hintbar">快捷键:空格 = 显示答案 · 1 忘了 / 2 难 / 3 会 / 4 简单</div>
+  <script src="review.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>单词本采集 · 设置</title>
+  <style>
+    body{font:14px/1.6 -apple-system,system-ui,sans-serif;max-width:580px;margin:40px auto;padding:0 20px;color:#111827;}
+    h1{font-size:20px;}
+    h2{font-size:15px;margin:30px 0 4px;}
+    .card{border:1px solid #eee;border-radius:12px;padding:16px 18px;margin-top:12px;}
+    label{display:block;font-weight:600;margin:14px 0 6px;}
+    input[type=text],input[type=url]{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;}
+    .row{display:flex;align-items:center;gap:10px;margin-top:6px;}
+    .row label{margin:0;font-weight:600;}
+    button{margin-top:18px;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;}
+    button.alt{background:#374151;margin-left:8px;}
+    button:hover{filter:brightness(1.08);}
+    .hint{color:#6b7280;font-size:12px;margin-top:4px;}
+    #status{margin-top:16px;font-weight:600;}
+    code{background:#f3f4f6;padding:1px 5px;border-radius:4px;}
+    .badge{display:inline-block;background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;}
+  </style>
+</head>
+<body>
+  <h1>单词本采集 · 设置 <span class="badge">本地优先 · 无需登录</span></h1>
+  <p class="hint">默认所有单词存在你浏览器本地,装上就能用。下面的云同步是可选的。</p>
+
+  <h2>① 采集行为</h2>
+  <div class="card">
+    <div class="row">
+      <input type="checkbox" id="autoSave" />
+      <label for="autoSave">选词自动保存(选中单个英文单词即静默存入,无需点按钮;配合 Trancy 用)</label>
+    </div>
+    <div class="hint">关掉后,选词会先冒出「★存入单词本」按钮,点了才存。词组/多词选区始终走按钮。</div>
+  </div>
+
+  <h2>② 云同步(可选 · 用 InsForge)</h2>
+  <div class="card">
+    <p class="hint" style="margin-top:0;">
+      不开也能正常用,只是不跨设备、不喂给 AI。开启后,每次保存会把单词镜像到你的 InsForge 项目,
+      以便复习网站 / openclaw 读取。
+    </p>
+    <div class="row">
+      <input type="checkbox" id="cloudSync" />
+      <label for="cloudSync">开启云同步</label>
+    </div>
+
+    <label>InsForge OSS Host</label>
+    <input type="url" id="cloudUrl" placeholder="https://xxxxxxx.us-east.insforge.app" />
+    <div class="hint">就是 <code>.insforge/project.json</code> 里的 <code>oss_host</code>。</div>
+
+    <label>anon key</label>
+    <input type="text" id="cloudKey" placeholder="anon_..." />
+    <div class="hint">用 <code>anon</code> 那把(不是 <code>ik_</code> 开头的 api_key,那是管理员密钥)。</div>
+
+    <button id="test" class="alt">测试连接</button>
+  </div>
+
+  <div>
+    <button id="save">保存全部设置</button>
+  </div>
+  <div id="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

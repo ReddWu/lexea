@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body{font:13px/1.5 -apple-system,system-ui,sans-serif;width:340px;margin:0;padding:14px;color:#111827;}
+    .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+    .count{font-size:13px;color:#6b7280;}
+    .bar{display:flex;gap:6px;margin-bottom:10px;}
+    .bar button{flex:1;background:#2563eb;color:#fff;border:none;border-radius:7px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;}
+    .bar button.alt{background:#374151;}
+    .bar button:hover{filter:brightness(1.08);}
+    .review{display:block;width:100%;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+    .review:hover{filter:brightness(1.06);}
+    ul{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto;}
+    li{padding:7px 0;border-top:1px solid #f0f0f0;}
+    .w{font-weight:700;}
+    .c{color:#6b7280;font-size:12px;margin-top:2px;}
+    .empty{color:#9ca3af;text-align:center;padding:24px 0;}
+    a{color:#2563eb;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <strong>单词本</strong>
+    <span class="count" id="count"></span>
+  </div>
+  <button class="review" id="review">▶ 开始复习 <span id="due"></span></button>
+  <div class="bar">
+    <button id="csv">导出 CSV</button>
+    <button id="json" class="alt">导出 JSON</button>
+  </div>
+  <ul id="list"></ul>
+  <div class="empty" id="empty" style="display:none;">
+    还没有单词。<br />在网页上选中一个单词即可保存,无需任何登录。<br />
+    想跨设备 / 接 AI? 到 <a id="opt">设置</a> 里开启云同步(可选)。
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

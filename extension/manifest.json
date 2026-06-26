@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Vocab Capture · 单词本采集",
+  "version": "0.1.0",
+  "description": "选中任意单词即可保存到你自己的单词库,自动连同所在原句(context)、来源网址一起记录。默认存在浏览器本地,可选同步到 InsForge。",
+  "permissions": ["storage", "unlimitedStorage"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "单词本采集"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
