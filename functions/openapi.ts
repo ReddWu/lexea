@@ -29,26 +29,7 @@ export default async function (_req: Request): Promise<Response> {
               description: "Ranked weak words with example sentences.",
               content: {
                 "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      count: { type: "integer" },
-                      words: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            word: { type: "string" },
-                            context: { type: "string" },
-                            lapses: { type: "integer" },
-                            reps: { type: "integer" },
-                            due: { type: "string" },
-                            state: { type: "string" },
-                          },
-                        },
-                      },
-                    },
-                  },
+                  schema: { $ref: "#/components/schemas/WeakWordsResponse" },
                 },
               },
             },
@@ -58,6 +39,28 @@ export default async function (_req: Request): Promise<Response> {
     },
     security: [{ apiKey: [] }],
     components: {
+      schemas: {
+        WeakWordsResponse: {
+          type: "object",
+          properties: {
+            count: { type: "integer" },
+            words: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  word: { type: "string" },
+                  context: { type: "string" },
+                  lapses: { type: "integer" },
+                  reps: { type: "integer" },
+                  due: { type: "string" },
+                  state: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
       securitySchemes: {
         apiKey: { type: "apiKey", in: "header", name: "x-api-key" },
       },
