@@ -19,3 +19,7 @@ node_modules/
 .roo
 .trae
 .windsurf
+
+# Next.js build output
+.next/
+out/

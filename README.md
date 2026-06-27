@@ -103,8 +103,8 @@
 - [x] 采集扩展(本地优先):选词 + 原句 + 自动保存 + 导出
 - [x] 可选 InsForge 云镜像表(PostgREST 接口,anon 可读写)
 - [x] **扩展内复习页**(SM-2 间隔重复,纯本地):到期出卡,正面词、背面释义+原句,打分回写 SRS
-- [x] **AI 接入**:ChatGPT 自定义指令(日常化)/ Custom GPT(实时)/ 自建 agent 脚本
-- [ ] 云复习网站(Next.js + Vercel,读云端表,跨设备)— 可选
+- [x] **AI 接入**:ChatGPT 自定义指令(日常化)/ Custom GPT(实时,含 `addWord`)/ 自建 agent 脚本
+- [x] **云复习网站**([`web/`](web/),Next.js + Vercel,读云端表):看板(到期/统计/7 天日程/单词管理)+ SRS 复习,跨设备
 - [ ] FSRS 升级(替换 SM-2,用 `stability`/`difficulty` 字段)— 可选
 
 ## 隐私与安全
