@@ -83,6 +83,43 @@ $("backfill").addEventListener("click", async () => {
   setStatus(`✓ 已上传 ${ok}/${words.length} 个词到云端`, ok === words.length ? "#16a34a" : "#b91c1c");
 });
 
+$("pull").addEventListener("click", async () => {
+  const base = $("cloudUrl").value.trim().replace(/\/+$/, "");
+  const key = $("cloudKey").value.trim();
+  if (!base || !key) {
+    setStatus("请先填 OSS Host 和 anon key", "#b91c1c");
+    return;
+  }
+  setStatus("拉取中…", "#6b7280");
+  let cloud;
+  try {
+    const res = await fetch(`${base}/api/database/records/words?limit=1000`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) {
+      setStatus(`✗ HTTP ${res.status}: ${await res.text()}`, "#b91c1c");
+      return;
+    }
+    cloud = await res.json();
+  } catch (e) {
+    setStatus("✗ " + e, "#b91c1c");
+    return;
+  }
+  const all = await chrome.storage.local.get(null);
+  const toSet = {};
+  let added = 0;
+  for (const w of cloud) {
+    if (!w || !w.lemma) continue;
+    const k = "w:" + w.lemma;
+    if (!all[k]) {
+      toSet[k] = w; // cloud-only word (e.g. added by ChatGPT) → bring it local
+      added++;
+    }
+  }
+  if (added) await chrome.storage.local.set(toSet);
+  setStatus(`✓ 从云端拉取了 ${added} 个新词到本地`, "#16a34a");
+});
+
 $("test").addEventListener("click", async () => {
   const url = $("cloudUrl").value.trim().replace(/\/+$/, "");
   const key = $("cloudKey").value.trim();

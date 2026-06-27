@@ -35,6 +35,14 @@
 
 直接跟这个 GPT 聊天即可。它会在开头静默拉一次弱词,然后在回复里自然地用它们;你新存的词、复习后变弱/变强的词,下次开聊会**自动反映**——不用手动更新。
 
+## 加了 `addWord`(问到新词自动入库)
+
+Action schema 现在含两个操作:`getWeakWords`(读弱词)和 **`addWord`(写新词)**。你聊天时让它解释/翻译某个英文词,它讲完会**自动把这个词存进你的云端单词表**,以后进弱词轮换。
+
+> 已经建好 GPT 的话,要获得 `addWord`:回 Action → **重新「通过 URL 导入」**同一个 schema 网址(`{oss_host}/functions/openapi`),并把更新后的 [`instructions.md`](instructions.md) 重新粘进 Instructions → Update。
+>
+> ⚠️ 这些经 `addWord` 写入的词只进**云端**;要让它们也出现在扩展的复习页和"复制弱词"里,到扩展设置 → ②云同步 点 **「⬇ 从云端拉取新词到本地」** 即可。
+
 ## 排查
 
 - 测试报 401:`x-api-key` 的值或 header 名填错了。

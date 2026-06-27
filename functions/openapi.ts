@@ -36,6 +36,33 @@ export default async function (_req: Request): Promise<Response> {
           },
         },
       },
+      "/functions/add-word": {
+        post: {
+          operationId: "addWord",
+          summary: "Save an English word the user asked about into their vocabulary list.",
+          description:
+            "Call this when the user asks about / wants to learn a single English word that is not already in their list, so it joins future practice.",
+          "x-openai-isConsequential": false,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AddWordRequest" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Whether the word was added.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/AddWordResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     security: [{ apiKey: [] }],
     components: {
@@ -58,6 +85,23 @@ export default async function (_req: Request): Promise<Response> {
                 },
               },
             },
+          },
+        },
+        AddWordRequest: {
+          type: "object",
+          required: ["word"],
+          properties: {
+            word: { type: "string", description: "A single English word." },
+            context: { type: "string", description: "An example sentence using the word (optional)." },
+            translation: { type: "string", description: "A short meaning/gloss (optional)." },
+          },
+        },
+        AddWordResponse: {
+          type: "object",
+          properties: {
+            ok: { type: "boolean" },
+            added: { type: "boolean", description: "true if newly added, false if it already existed." },
+            word: { type: "string" },
           },
         },
       },
