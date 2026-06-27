@@ -10,12 +10,17 @@
     .bar button{flex:1;background:#2563eb;color:#fff;border:none;border-radius:7px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;}
     .bar button.alt{background:#374151;}
     .bar button:hover{filter:brightness(1.08);}
-    .review{display:block;width:100%;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+    .review{display:block;width:100%;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;}
     .review:hover{filter:brightness(1.06);}
+    .copy{display:block;width:100%;background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;}
+    .copy:hover{filter:brightness(1.06);}
+    #copyStatus{font-size:11px;color:#16a34a;text-align:center;min-height:14px;margin-bottom:6px;}
     ul{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto;}
-    li{padding:7px 0;border-top:1px solid #f0f0f0;}
+    li{position:relative;padding:7px 22px 7px 0;border-top:1px solid #f0f0f0;}
     .w{font-weight:700;}
     .c{color:#6b7280;font-size:12px;margin-top:2px;}
+    .del{position:absolute;top:6px;right:0;border:none;background:none;color:#cbd5e1;font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;}
+    .del:hover{color:#dc2626;}
     .empty{color:#9ca3af;text-align:center;padding:24px 0;}
     a{color:#2563eb;cursor:pointer;}
   </style>
@@ -29,6 +34,8 @@
     </span>
   </div>
   <button class="review" id="review">▶ 开始复习 <span id="due"></span></button>
+  <button class="copy" id="copy">⧉ 复制弱词(粘进 ChatGPT 自定义指令)</button>
+  <div id="copyStatus"></div>
   <div class="bar">
     <button id="csv">导出 CSV</button>
     <button id="json" class="alt">导出 JSON</button>

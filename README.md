@@ -31,11 +31,11 @@
 
 ### 怎么用
 
-- **选词自动保存(默认开)**:选中**单个英文单词**即静默存入,不清除选区。所以你照常用 Trancy 选词看翻译,同一下选词就进了你的库 —— 体感即「用 Trancy 选词 = 自动入库」。
+- **选词自动保存(默认开)**:选中**单个英文单词**即静默存入,不清除选区。所以你照常用 Trancy 选词看翻译,同一下选词就进了你的库 —— 体感即「用 Trancy 选词 = 自动入库」。只接受**真正的单词**(字母/连字符/撇号,2–40 长),`api_key`、代码、数字这类不会误存。
 - 选中**词组/多词**时会冒出「★ 存入单词本」按钮,点了才存(避免误存整句)。
 - 不想自动存?进**选项**关掉「选词自动保存」即可。
 - 每次保存都会连同**所在整句原文(context)、来源网址、标题**一起记录。
-- 点扩展图标:看最近的词、总数,**导出 CSV / JSON**(解决 Trancy 免费版导不出来的痛点)。
+- 点扩展图标:看全部词、**逐个删除(✕)**、**复制弱词给 ChatGPT**、**导出 CSV / JSON**(解决 Trancy 免费版导不出来的痛点)。删除会同时删本地和云端。
 
 > ⚠️ Chrome 扩展之间互相隔离,本扩展**读不到 Trancy 内部的收藏动作或单词本**。它是独立监听你的"选词"动作来保存的,因此存的是你选中的所有(单个)词。重复词自动去重;不想要的词以后在复习页标记"已掌握"。
 
@@ -89,20 +89,21 @@
 
 ## 四、让你的 AI 多用你的弱词
 
-需开启云同步(弱词数据在云端)。有两种接法:
+**A. ChatGPT 日常对话(推荐 · 日常化)** — 见 [`chatgpt/custom-instructions.md`](chatgpt/custom-instructions.md)。
+弹窗里点 **「⧉ 复制弱词」**,把生成的指令粘进 ChatGPT **设置 → 个性化 → 自定义指令**。之后**每一次普通聊天**都会自然地用你的弱词,不用打开任何东西。静态文本,隔几天再点一次复制刷新即可。无需云同步。
 
-**A. ChatGPT(Plus,推荐)** — 见 [`chatgpt/`](chatgpt/)。
-已部署一个受密钥保护的接口 `{oss_host}/functions/weak-words`。建一个 **Custom GPT**,把 [`chatgpt/instructions.md`](chatgpt/instructions.md) 设为指令、[`chatgpt/openapi.yaml`](chatgpt/openapi.yaml) 设为 Action,聊天时它会**实时拉取你最新的弱词**并自然地用进对话,自动更新。步骤见 `chatgpt/README.md`。
+**B. ChatGPT Custom GPT(实时自动更新)** — 见 [`chatgpt/`](chatgpt/)。
+需开云同步。已部署受密钥保护的接口 `{oss_host}/functions/weak-words`;建一个 Custom GPT,把 [`chatgpt/instructions.md`](chatgpt/instructions.md) 设为指令、[`chatgpt/openapi.yaml`](chatgpt/openapi.yaml) 设为 Action,聊天时**实时拉最新弱词**。要单独打开/@这个 GPT。步骤见 `chatgpt/README.md`。
 
-**B. 自建 agent / 脚本** — 见 [`openclaw/`](openclaw/)。
-两个零依赖 Node 脚本:`weak-words.mjs`(输出可拼进 system prompt 的弱词清单)+ `mark-used.mjs`(回写使用次数)。适合你能改 prompt 的自建 agent。
+**C. 自建 agent / 脚本** — 见 [`openclaw/`](openclaw/)。
+零依赖 Node 脚本:`weak-words.mjs`(输出可拼进 system prompt 的弱词清单)+ `mark-used.mjs`(回写使用次数)。
 
 ## 路线图
 
 - [x] 采集扩展(本地优先):选词 + 原句 + 自动保存 + 导出
 - [x] 可选 InsForge 云镜像表(PostgREST 接口,anon 可读写)
 - [x] **扩展内复习页**(SM-2 间隔重复,纯本地):到期出卡,正面词、背面释义+原句,打分回写 SRS
-- [x] **AI 接入**:ChatGPT Custom GPT(`weak-words` 边缘函数 + Action)/ 自建 agent 脚本
+- [x] **AI 接入**:ChatGPT 自定义指令(日常化)/ Custom GPT(实时)/ 自建 agent 脚本
 - [ ] 云复习网站(Next.js + Vercel,读云端表,跨设备)— 可选
 - [ ] FSRS 升级(替换 SM-2,用 `stability`/`difficulty` 字段)— 可选
 

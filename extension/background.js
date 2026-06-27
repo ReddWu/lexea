@@ -106,6 +106,19 @@ async function pushCloud(rec) {
   }
 }
 
+async function deleteCloud(lemma) {
+  const { url, key, on } = await getCloud();
+  if (!on) return;
+  try {
+    await fetch(`${url}/api/database/records/words?lemma=eq.${encodeURIComponent(lemma)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${key}` },
+    });
+  } catch (_e) {
+    // best-effort
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "capture") {
     saveLocal(msg.payload)
@@ -119,6 +132,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // review page asks us to mirror a graded card to the cloud
   if (msg?.type === "syncWord" && msg.record) {
     pushCloud(msg.record)
+      .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true;
+  }
+  // popup asks us to delete a word's cloud row
+  if (msg?.type === "deleteWord" && msg.lemma) {
+    deleteCloud(msg.lemma)
       .then(() => sendResponse({ ok: true }))
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;

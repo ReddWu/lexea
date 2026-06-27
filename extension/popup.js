@@ -9,6 +9,43 @@ async function allWords() {
     .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
 }
 
+// weakness score — same formula as functions/weak-words.ts (weakest first)
+function score(w) {
+  const now = Date.now();
+  let s = 0;
+  if (new Date(w.due).getTime() <= now) s += 2;
+  if (w.state === "relearning") s += 3;
+  s += (w.lapses || 0) * 2;
+  if ((w.reps || 0) === 0) s += 1;
+  s -= (w.reps || 0) * 0.2;
+  s -= Math.max(0, (w.ease || 2.5) - 2.5);
+  s -= (w.times_used_in_chat || 0) * 0.3;
+  return s;
+}
+
+function weakRanked(words, limit) {
+  return words
+    .map((w) => ({ w, s: score(w) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, limit)
+    .map((x) => x.w);
+}
+
+function buildInstruction(words) {
+  const list = weakRanked(words, 30)
+    .map((w) => w.word)
+    .join(", ");
+  return (
+    "I'm a Chinese native speaker learning English. In your replies, naturally and correctly use some of " +
+    "the English words I'm practicing (listed below) whenever they genuinely fit the topic — prioritize the " +
+    "ones earlier in the list. Don't force them, don't list or define them, and don't add other " +
+    '"vocabulary words" of your own; just weave mine into fluent, natural sentences. Add a short Chinese ' +
+    "gloss in parentheses only for a genuinely hard one. If none fit naturally, just reply normally.\n\n" +
+    "My words (weakest first): " +
+    list
+  );
+}
+
 function download(filename, text, mime) {
   const blob = new Blob([text], { type: mime });
   const a = document.createElement("a");
@@ -39,14 +76,23 @@ function render(words) {
   }
   $("empty").style.display = "none";
   $("list").innerHTML = words
-    .slice(0, 15)
     .map(
       (w) =>
-        `<li><div class="w">${escapeHtml(w.word)}</div>` +
+        `<li><button class="del" data-lemma="${escapeHtml(w.lemma)}" title="删除">✕</button>` +
+        `<div class="w">${escapeHtml(w.word)}</div>` +
         (w.context ? `<div class="c">${escapeHtml(w.context)}</div>` : "") +
         `</li>`
     )
     .join("");
+  $("list")
+    .querySelectorAll(".del")
+    .forEach((b) => b.addEventListener("click", () => deleteWord(b.dataset.lemma)));
+}
+
+async function deleteWord(lemma) {
+  await chrome.storage.local.remove("w:" + lemma);
+  chrome.runtime.sendMessage({ type: "deleteWord", lemma }, () => void chrome.runtime.lastError);
+  render(await allWords());
 }
 
 (async () => {
@@ -60,6 +106,20 @@ function render(words) {
 
   $("review").addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("review.html") });
+  });
+
+  $("copy").addEventListener("click", async () => {
+    const w = await allWords();
+    if (!w.length) {
+      $("copyStatus").textContent = "还没有单词";
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(buildInstruction(w));
+      $("copyStatus").textContent = "✓ 已复制 · 粘进 ChatGPT 设置 → 个性化 → 自定义指令";
+    } catch (_e) {
+      $("copyStatus").textContent = "复制失败,请重试";
+    }
   });
 
   $("csv").addEventListener("click", async () => {

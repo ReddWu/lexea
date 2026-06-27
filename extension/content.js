@@ -111,7 +111,9 @@
         return;
       }
       const sentence = getSentence(sel, text);
-      const isSingleWord = text.split(/\s+/).length === 1 && /[A-Za-z]/.test(text) && text.length <= 40;
+      // a real word: starts with a letter, only letters/apostrophe/hyphen, len 2–40.
+      // rejects junk like "wprds_coach_api", codes, numbers, single letters.
+      const isSingleWord = /^[a-zA-Z][a-zA-Z'’-]{1,39}$/.test(text);
 
       // auto-save single words silently; leave the selection intact so Trancy's
       // popup is unaffected and we never clear what you highlighted.
