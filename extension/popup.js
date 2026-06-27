@@ -71,4 +71,5 @@ function render(words) {
     download("vocab.json", JSON.stringify(w, null, 2), "application/json");
   });
   $("opt").addEventListener("click", () => chrome.runtime.openOptionsPage());
+  $("settings").addEventListener("click", () => chrome.runtime.openOptionsPage());
 })();
