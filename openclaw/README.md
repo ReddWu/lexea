@@ -7,7 +7,7 @@
 ## 环境变量
 
 ```bash
-export INSFORGE_URL=https://w9jmt9y8.us-east.insforge.app   # 你的 oss_host
+export INSFORGE_URL=https://YOUR-PROJECT.us-east.insforge.app   # 你的 oss_host(见 .insforge/project.json)
 export INSFORGE_ANON_KEY=anon_xxxxxxxx                       # anon key(不是 ik_ 那把)
 ```
 

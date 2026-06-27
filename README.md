@@ -9,17 +9,19 @@
    ┌──────────────────────────┐        可选开关
    │  浏览器本地 (chrome.storage) │ ───────────────►  InsForge words 表(云镜像)
    │  唯一数据源:词/原句context/  │                      │
-   │  SRS熟练度/被AI用过次数 ...   │                      ▼
-   └──────────────────────────┘            复习网站 · openclaw 读这张表
-            │
-            ├─ popup:看最近词 + 导出 CSV/JSON(离线可用)
-            └─ (待建) 扩展内复习页:艾宾浩斯/SRS
+   │  SRS熟练度/被AI用过次数 ...   │              ┌───────┼───────────┐
+   └──────────────────────────┘              ▼       ▼           ▼
+            │                          复习网站   ChatGPT     自建 agent
+            ├─ popup:复习 / 删除 / 复制弱词给AI / 导出  (Custom GPT  (openclaw
+            └─ 扩展内复习页:艾宾浩斯/SRS              / 自定义指令)  脚本)
 ```
 
-- **默认**:所有单词存在浏览器本地。采集、查看、导出全部离线可用,不需要任何账号或后端。
-- **可选云同步(InsForge)**:打开后,每次保存会把单词镜像到你自己的 InsForge 项目,供复习网站 / AI(openclaw)读取。
+- **默认**:所有单词存在浏览器本地。采集、查看、导出、复习全部离线可用,不需要任何账号或后端。
+- **可选云同步(InsForge)**:打开后,每次保存会把单词镜像到你自己的 InsForge 项目,供复习网站 / ChatGPT 读取。
 
-本仓库目前实现:**采集扩展(本地优先)** + **可选 InsForge 云镜像表**。
+四个部分:**采集扩展(本地优先)** · **可选 InsForge 云镜像** · **复习网站([`web/`](web/),部署 Vercel)** · **AI 接入(ChatGPT / 自建 agent)**。
+
+> 🛠 **想自己部署一套?** 见文末「[从零自托管](#从零自托管开源)」。代码里**不含任何密钥/地址**:host、anon key、token 全部走环境变量 / secret,每个人填自己的。
 
 ---
 
@@ -107,8 +109,40 @@
 - [x] **云复习网站**([`web/`](web/),Next.js + Vercel,读云端表):看板(到期/统计/7 天日程/单词管理)+ SRS 复习,跨设备
 - [ ] FSRS 升级(替换 SM-2,用 `stability`/`difficulty` 字段)— 可选
 
+## 从零自托管(开源)
+
+clone 本仓库后,**纯本地用**只需装扩展(上面「一」)。要云同步 / 复习网站 / ChatGPT,按需做下面几步——所有密钥都由你自己持有,仓库里没有任何写死的地址或 key。
+
+**1) 建后端 + 数据表**
+```bash
+npm i -g @insforge/cli            # 或全程用 npx
+npx @insforge/cli login
+npx @insforge/cli create          # 建一个免费 InsForge 项目(会写 .insforge/project.json)
+npx @insforge/cli db migrations up --all   # 建 words 表(见 migrations/)
+```
+记下 `.insforge/project.json` 里的 `oss_host` 和 `anon key`(`anon_` 开头)。
+
+**2) 扩展连云**:扩展 → 选项 → ②云同步 → 填 `oss_host` + anon key → 测试 → 保存。
+
+**3) 复习网站(可选,部署 Vercel)**:见 [`web/README.md`](web/README.md)。设 3 个环境变量(`INSFORGE_OSS_HOST` / `INSFORGE_ANON_KEY` / 可选 `APP_PASSWORD`)后 `cd web && npx vercel --prod`。
+
+**4) ChatGPT 接入(可选)**:部署三个边缘函数并设两个 secret——
+```bash
+# token 保护 weak-words / add-word(自己生成一串)
+npx @insforge/cli secrets add WEAK_WORDS_TOKEN "$(openssl rand -hex 24)"
+# 让 openapi 函数在 schema 里返回你的公开 host(填你的 oss_host)
+npx @insforge/cli secrets add PUBLIC_OSS_HOST "https://YOUR-PROJECT.us-east.insforge.app"
+npx @insforge/cli functions deploy weak-words --file ./functions/weak-words.ts
+npx @insforge/cli functions deploy add-word   --file ./functions/add-word.ts
+npx @insforge/cli functions deploy openapi    --file ./functions/openapi.ts
+```
+然后按 [`chatgpt/README.md`](chatgpt/README.md) 建 Custom GPT(Action 用 URL 导入 `{oss_host}/functions/openapi`,鉴权填 `WEAK_WORDS_TOKEN`),或按 [`chatgpt/custom-instructions.md`](chatgpt/custom-instructions.md) 走日常化自定义指令。
+
+> 用 `npx @insforge/cli secrets get WEAK_WORDS_TOKEN` 取回 token 填进 ChatGPT 鉴权。
+
 ## 隐私与安全
 
 - 默认数据只在你本机浏览器里。
-- 开启云同步后,数据进入**你自己的** InsForge 项目;anon key 只填进你自己的扩展、不提交到仓库。
+- 开启云同步后,数据进入**你自己的** InsForge 项目;anon key 只填进你自己的扩展 / Vercel 环境变量,不提交到仓库。
+- 边缘函数(weak-words / add-word)用 `WEAK_WORDS_TOKEN` 保护;复习网站可选 `APP_PASSWORD`。所有密钥走环境变量 / secret,**不进 git**(`.insforge/`、`.env.local` 已被忽略)。
 - v1 为求简单,云表允许持有 anon key 的客户端直接读写(因为是你的私有项目)。要做公开多用户实例,见迁移文件里的 UPGRADE PATH:加 `user_id` + 登录,按 `auth.uid()` 隔离。

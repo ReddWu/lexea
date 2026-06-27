@@ -1,7 +1,16 @@
 // openapi edge function — serves the Action's OpenAPI spec as JSON so a
 // ChatGPT Custom GPT can import it via URL (avoids mobile copy-paste mangling).
 // GET {oss_host}/functions/openapi
-export default async function (_req: Request): Promise<Response> {
+export default async function (req: Request): Promise<Response> {
+  // The spec's servers.url must be this project's PUBLIC oss_host (where the
+  // weak-words / add-word endpoints live). Set it as a secret so any fork works
+  // without editing code: `insforge secrets add PUBLIC_OSS_HOST https://<appkey>.<region>.insforge.app`.
+  // Falls back to forwarded host (may be the internal Deno host on some setups).
+  const fwdHost = req.headers.get("x-forwarded-host");
+  const fwdProto = req.headers.get("x-forwarded-proto") || "https";
+  const origin =
+    (Deno.env.get("PUBLIC_OSS_HOST") || "").replace(/\/+$/, "") ||
+    (fwdHost ? `${fwdProto}://${fwdHost}` : new URL(req.url).origin);
   const spec = {
     openapi: "3.1.0",
     info: {
@@ -9,7 +18,7 @@ export default async function (_req: Request): Promise<Response> {
       description: "Fetch the learner's weakest English vocabulary, ranked weakest-first.",
       version: "1.0.0",
     },
-    servers: [{ url: "https://w9jmt9y8.us-east.insforge.app" }],
+    servers: [{ url: origin }],
     paths: {
       "/functions/weak-words": {
         get: {

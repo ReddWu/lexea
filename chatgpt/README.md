@@ -9,7 +9,7 @@
 ## 你需要的两样东西
 
 1. **服务器地址(oss_host)**:见 `.insforge/project.json` 的 `oss_host`
-   (本项目是 `https://w9jmt9y8.us-east.insforge.app`)。
+   (形如 `https://YOUR-PROJECT.us-east.insforge.app`)。
 2. **API 密钥**:运行
    ```bash
    npx @insforge/cli secrets get WEAK_WORDS_TOKEN

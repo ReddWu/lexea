@@ -9,7 +9,7 @@ info:
   description: Fetch the learner's weakest English vocabulary, ranked weakest-first.
   version: 1.0.0
 servers:
-  - url: https://w9jmt9y8.us-east.insforge.app
+  - url: https://YOUR-PROJECT.us-east.insforge.app   # 改成你的 oss_host(见 .insforge/project.json)
 paths:
   /functions/weak-words:
     get:
