@@ -72,6 +72,33 @@ export default async function (req: Request): Promise<Response> {
           },
         },
       },
+      "/functions/review-word": {
+        post: {
+          operationId: "reviewWord",
+          summary: "Record how well the user recalled a word during a quiz, updating its spaced-repetition schedule.",
+          description:
+            "Call this after quizzing the user on one of their words. rating: 1=forgot, 2=hard, 3=good, 4=easy. Forgotten/hard words will resurface sooner.",
+          "x-openai-isConsequential": false,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ReviewWordRequest" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The word's updated schedule.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ReviewWordResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     security: [{ apiKey: [] }],
     components: {
@@ -111,6 +138,28 @@ export default async function (req: Request): Promise<Response> {
             ok: { type: "boolean" },
             added: { type: "boolean", description: "true if newly added, false if it already existed." },
             word: { type: "string" },
+          },
+        },
+        ReviewWordRequest: {
+          type: "object",
+          required: ["word", "rating"],
+          properties: {
+            word: { type: "string", description: "The word being quizzed (must already be in the list)." },
+            rating: {
+              type: "integer",
+              enum: [1, 2, 3, 4],
+              description: "Recall quality: 1 forgot, 2 hard, 3 good, 4 easy.",
+            },
+          },
+        },
+        ReviewWordResponse: {
+          type: "object",
+          properties: {
+            ok: { type: "boolean" },
+            word: { type: "string" },
+            due: { type: "string", description: "Next review time (ISO)." },
+            interval_days: { type: "integer" },
+            state: { type: "string" },
           },
         },
       },
