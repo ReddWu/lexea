@@ -56,8 +56,11 @@ export default function Tutor() {
   }
 
   async function send(text, opts = {}) {
-    // hidden messages ride in the history (the model needs them) but never render
-    const history = [...messages, { role: "user", content: text, hidden: !!opts.hidden }];
+    // hidden messages ride in the history (the model needs them) but never render.
+    // opts.fresh starts from an empty history (setMessages is async — the closure
+    // would otherwise still see the previous conversation).
+    const base = opts.fresh ? [] : messages;
+    const history = [...base, { role: "user", content: text, hidden: !!opts.hidden }];
     setMessages(history);
     setBusy(true);
     setError("");
@@ -173,10 +176,9 @@ export default function Tutor() {
       localStorage.removeItem("mia-chat-v1");
     } catch (_e) {}
     sessionIdRef.current = "mia-" + crypto.randomUUID().slice(0, 13);
-    setMessages([]);
     setEnded(false);
     setError("");
-    send("Hi Mia, let's start today's session.", { hidden: true });
+    send("Hi Mia, let's start today's session.", { hidden: true, fresh: true });
   }
 
   useEffect(() => {
