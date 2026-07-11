@@ -9,12 +9,25 @@ export function everosConfigured() {
   return Boolean(KEY);
 }
 
+// memory must never stall a tutoring turn — but AbortSignal.timeout is missing
+// in some edge sandboxes (Next dev), so feature-detect with a manual fallback.
+function timeoutSignal(ms) {
+  try {
+    if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) return AbortSignal.timeout(ms);
+    const c = new AbortController();
+    setTimeout(() => c.abort(), ms);
+    return c.signal;
+  } catch (_e) {
+    return undefined;
+  }
+}
+
 async function call(path, body, method = "POST") {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(4000), // memory must never stall a tutoring turn
+    signal: timeoutSignal(4000),
   });
   if (!res.ok) throw new Error(`everos ${path} ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return (await res.json()).data;
@@ -62,12 +75,24 @@ export async function listMemories(memoryType, pageSize = 20) {
 }
 
 // Render recall results into a compact prompt block ("" if nothing).
+// profile items may be plain strings or rich objects ({category, description, evidence...})
+export function traitText(item) {
+  if (typeof item === "string") return item;
+  if (!item) return "";
+  const head = item.trait || item.category || "";
+  const body = item.description || "";
+  return head && body ? `${head}: ${body}` : body || head;
+}
+
 export function memoryBlock(data) {
   if (!data) return "";
   const lines = [];
   for (const p of data.profiles || []) {
     const info = [...(p.profile_data?.explicit_info || []), ...(p.profile_data?.implicit_traits || [])];
-    for (const i of info.slice(0, 12)) lines.push(`- ${i}`);
+    for (const i of info.slice(0, 12)) {
+      const t = traitText(i);
+      if (t) lines.push(`- ${t.slice(0, 300)}`);
+    }
   }
   for (const e of (data.episodes || []).slice(0, 4)) {
     lines.push(`- (${new Date(e.timestamp).toISOString().slice(0, 10)}) ${e.summary || e.episode}`.slice(0, 240));

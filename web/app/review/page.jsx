@@ -199,14 +199,6 @@ function Card({ card, revealed, def, phon, zh, zhShown, onShowZh, onReveal, onGr
           {phon}
         </div>
       ) : null}
-      <div className="src">
-        {card.source_url ? (
-          <a href={card.source_url} target="_blank" rel="noreferrer">
-            {card.source_title || card.source_url}
-          </a>
-        ) : null}
-      </div>
-
       {!revealed ? (
         <div className="controls">
           <button className="g g3 reveal" onClick={onReveal}>

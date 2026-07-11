@@ -31,10 +31,17 @@ export default function Memory() {
       </div>
     );
 
+  const asText = (item) => {
+    if (typeof item === "string") return item;
+    if (!item) return "";
+    const head = item.trait || item.category || "";
+    const body = item.description || "";
+    return head && body ? `${head} — ${body}` : body || head;
+  };
   const traits = [];
   for (const p of data.profiles) {
-    for (const t of p.profile_data?.explicit_info || []) traits.push({ t, kind: "explicit" });
-    for (const t of p.profile_data?.implicit_traits || []) traits.push({ t, kind: "implicit" });
+    for (const t of p.profile_data?.explicit_info || []) traits.push({ t: asText(t), kind: "explicit" });
+    for (const t of p.profile_data?.implicit_traits || []) traits.push({ t: asText(t), kind: "implicit" });
   }
 
   return (

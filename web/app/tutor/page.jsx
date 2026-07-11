@@ -85,12 +85,50 @@ export default function Tutor() {
   useEffect(() => {
     if (startedRef.current) return; // StrictMode double-invoke guard (dev)
     startedRef.current = true;
+    // restore the last session from localStorage (survives refreshes)
+    let restored = false;
+    try {
+      const raw = localStorage.getItem("mia-chat-v1");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.sessionId && Array.isArray(saved.messages) && saved.messages.length) {
+          sessionIdRef.current = saved.sessionId;
+          setMessages(saved.messages);
+          setEnded(!!saved.ended);
+          restored = true;
+        }
+      }
+    } catch (_e) {}
     loadWords(false).then(() => {
-      // kick off the session: Mia plans it based on the forgetting curve
-      send("Hi Mia, let's start today's session.", { hidden: true });
+      if (!restored) {
+        // fresh session: Mia plans it based on the forgetting curve
+        send("Hi Mia, let's start today's session.", { hidden: true });
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // persist the conversation so a refresh never loses it
+  useEffect(() => {
+    if (!messages.length) return;
+    try {
+      localStorage.setItem(
+        "mia-chat-v1",
+        JSON.stringify({ sessionId: sessionIdRef.current, messages, ended })
+      );
+    } catch (_e) {}
+  }, [messages, ended]);
+
+  function newSession() {
+    try {
+      localStorage.removeItem("mia-chat-v1");
+    } catch (_e) {}
+    sessionIdRef.current = "mia-" + crypto.randomUUID().slice(0, 13);
+    setMessages([]);
+    setEnded(false);
+    setError("");
+    send("Hi Mia, let's start today's session.", { hidden: true });
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -121,6 +159,9 @@ export default function Tutor() {
             <b>Mia</b> <span className="sub">your vocabulary mentor · {dueCount} words due</span>
           </div>
           <div className="head-actions">
+            <button className="end-btn" disabled={busy} onClick={newSession}>
+              New session
+            </button>
             <button
               className="end-btn"
               disabled={busy || ended || messages.length < 2}
@@ -146,7 +187,7 @@ export default function Tutor() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={ended ? "Session ended — refresh to start a new one" : 'Chat in English — or try "quiz me"'}
+            placeholder={ended ? "Session ended — hit New session when ready" : 'Chat in English — or try "quiz me"'}
             disabled={busy || ended}
             autoFocus
           />

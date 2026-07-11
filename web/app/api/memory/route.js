@@ -12,14 +12,17 @@ export async function GET() {
     return NextResponse.json({ configured: false, profiles: [], episodes: [] });
   }
   try {
+    const errs = [];
     const [prof, epi] = await Promise.all([
-      listMemories("profile").catch(() => null),
-      listMemories("episodic_memory").catch(() => null),
+      listMemories("profile").catch((e) => (errs.push("profile: " + String(e?.message || e)), null)),
+      listMemories("episodic_memory").catch((e) => (errs.push("episodes: " + String(e?.message || e)), null)),
     ]);
+    if (errs.length) console.error("[memory]", errs.join(" | "));
     return NextResponse.json({
       configured: true,
       profiles: prof?.profiles || [],
       episodes: epi?.episodes || [],
+      ...(errs.length ? { debug: errs } : {}),
     });
   } catch (e) {
     return NextResponse.json({ error: String(e.message || e) }, { status: 502 });

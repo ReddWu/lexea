@@ -211,7 +211,6 @@ function renderFront(rec) {
   card.innerHTML = `
     <div class="word">${esc(rec.word)} ${SPEAK_BTN(rec.word)}</div>
     <div class="phon" id="phon" style="text-align:center;color:#6b6b6b;font-size:16px;margin-top:4px;font-family:Charter,Georgia,serif;"></div>
-    <div class="src">${rec.source_url ? `<a href="${esc(rec.source_url)}" target="_blank">${esc(rec.source_title || rec.source_url)}</a>` : ""}</div>
     <div class="controls"><button class="reveal" id="reveal">Reveal (space)</button></div>`;
   document.getElementById("reveal").addEventListener("click", () => renderBack(rec));
   wirePhonRow(rec);
