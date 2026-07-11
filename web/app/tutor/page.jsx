@@ -70,9 +70,52 @@ export default function Tutor() {
           session_id: sessionIdRef.current,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || res.status);
-      setMessages((ms) => [...ms, { role: "assistant", content: data.reply }]);
+      const ctype = res.headers.get("content-type") || "";
+      if (!res.ok || !ctype.includes("ndjson")) {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || res.status);
+        setMessages((ms) => [...ms, { role: "assistant", content: data.reply }]);
+      } else {
+        // NDJSON stream: grow Mia's bubble as tokens arrive
+        setMessages((ms) => [...ms, { role: "assistant", content: "" }]);
+        const appendDelta = (t) =>
+          setMessages((ms) => {
+            const next = ms.slice();
+            const last = next[next.length - 1];
+            next[next.length - 1] = { ...last, content: (last.content || "") + t };
+            return next;
+          });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let sawError = null;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            let ev;
+            try {
+              ev = JSON.parse(line);
+            } catch {
+              continue;
+            }
+            if (ev.type === "delta") appendDelta(ev.text);
+            else if (ev.type === "done") {
+              // normalize spacing with the authoritative reply
+              setMessages((ms) => {
+                const next = ms.slice();
+                next[next.length - 1] = { role: "assistant", content: ev.reply };
+                return next;
+              });
+            } else if (ev.type === "error") sawError = ev.error;
+          }
+        }
+        if (sawError) setError(sawError);
+      }
       if (opts.end) setEnded(true);
       await loadWords(true);
     } catch (e) {
@@ -229,7 +272,10 @@ export default function Tutor() {
                 {m.role === "assistant" ? renderWithHighlights(m.content, i) : m.content}
               </div>
             ))}
-          {busy && <div className="msg assistant typing">…</div>}
+          {busy &&
+            !(messages.length && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content) && (
+              <div className="msg assistant typing">…</div>
+            )}
           {error && <div className="msg err">{error}</div>}
         </div>
         <form className="chat-input" onSubmit={onSubmit}>

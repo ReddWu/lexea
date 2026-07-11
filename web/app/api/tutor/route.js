@@ -19,7 +19,7 @@ import {
   saveProfile,
 } from "../../../lib/butterbase";
 import { schedule, score } from "../../../lib/srs";
-import { chat, llmConfigured } from "../../../lib/llm";
+import { chat, chatStream, llmConfigured } from "../../../lib/llm";
 import {
   everosConfigured,
   remember,
@@ -263,12 +263,17 @@ export async function POST(req) {
   const ending = !!body.end;
   const sessionId = String(body.session_id || "mia-session");
 
+  // long-term memory only needs a fresh pull at session start (and for the
+  // end-of-session distiller) — skipping it mid-session saves 1-2s per turn
+  const isFirstTurn = history.filter((m) => m.role === "user").length <= 1;
+  const needMemory = isFirstTurn || ending;
+
   let words, profile, everosMemory;
   try {
     [words, profile, everosMemory] = await Promise.all([
       listWords(),
-      getProfile().catch(() => null),
-      everosConfigured()
+      needMemory ? getProfile().catch(() => null) : null,
+      needMemory && everosConfigured()
         ? recall("learner profile, interests, recurring mistakes, recent tutoring progress")
             .then(memoryBlock)
             .catch(() => "")
@@ -295,52 +300,70 @@ export async function POST(req) {
     else messages.push({ role: "user", content: note.trim() });
   }
 
-  const toolEvents = [];
-  const textParts = []; // models often put text and tool_calls in the SAME message
-  try {
-    for (let i = 0; i < 6; i++) {
-      const msg = await chat(messages, TOOLS);
-      if (typeof msg.content === "string" && msg.content.trim()) textParts.push(msg.content.trim());
-      if (msg.tool_calls && msg.tool_calls.length) {
-        messages.push(msg);
-        for (const tc of msg.tool_calls) {
-          let args = {};
-          try {
-            args = JSON.parse(tc.function.arguments || "{}");
-          } catch {}
-          let result;
-          try {
-            result = await runTool(tc.function.name, args);
-          } catch (e) {
-            result = { error: String(e.message || e) };
+  // NDJSON stream: {type:"delta"|"tool"|"done"|"error", ...} one per line.
+  // The learner sees Mia typing the moment the model starts generating.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const emit = (obj) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+      const toolEvents = [];
+      const textParts = []; // models often put text and tool_calls in the SAME message
+      try {
+        let finished = false;
+        for (let i = 0; i < 6 && !finished; i++) {
+          const msg = await chatStream(messages, TOOLS, (t) => emit({ type: "delta", text: t }));
+          if (typeof msg.content === "string" && msg.content.trim()) textParts.push(msg.content.trim());
+          if (msg.tool_calls && msg.tool_calls.length) {
+            messages.push(msg);
+            for (const tc of msg.tool_calls) {
+              let args = {};
+              try {
+                args = JSON.parse(tc.function.arguments || "{}");
+              } catch {}
+              let result;
+              try {
+                result = await runTool(tc.function.name, args);
+              } catch (e) {
+                result = { error: String(e.message || e) };
+              }
+              const ev = { tool: tc.function.name, args, result };
+              toolEvents.push(ev);
+              emit({ type: "tool", event: ev }); // panel can flash immediately
+              messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
+            }
+            continue;
           }
-          toolEvents.push({ tool: tc.function.name, args, result });
-          messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
+          finished = true;
         }
-        continue;
+        const reply = finished ? textParts.join("\n\n") || "…" : "(Mia got stuck in a tool loop — try again)";
+        // memory writes are best-effort and must not delay the visible reply
+        if (everosConfigured()) {
+          const lastUser = [...history].reverse().find((m) => m.role === "user");
+          const pair = [];
+          if (lastUser) pair.push({ role: "user", content: lastUser.content });
+          pair.push({ role: "assistant", content: reply });
+          const p = remember(sessionId, pair).catch(() => {});
+          if (ending) {
+            await p;
+            await flush(sessionId).catch(() => {});
+          }
+        }
+        if (ending) {
+          // distill the session into the cross-session learner profile
+          try {
+            await updateProfile(profile, history);
+          } catch (_e) {}
+        }
+        emit({ type: "done", reply, toolEvents });
+      } catch (e) {
+        emit({ type: "error", error: String(e?.message || e) });
+      } finally {
+        controller.close();
       }
-      const reply = textParts.join("\n\n") || "…";
-      // memory writes are best-effort; never block the reply
-      if (everosConfigured()) {
-        const lastUser = [...history].reverse().find((m) => m.role === "user");
-        const pair = [];
-        if (lastUser) pair.push({ role: "user", content: lastUser.content });
-        pair.push({ role: "assistant", content: reply });
-        try {
-          await remember(sessionId, pair);
-          if (ending) await flush(sessionId);
-        } catch (_e) {}
-      }
-      if (ending) {
-        // distill the session into the cross-session learner profile
-        try {
-          await updateProfile(profile, history);
-        } catch (_e) {}
-      }
-      return NextResponse.json({ reply, toolEvents });
-    }
-    return NextResponse.json({ reply: "(Mia got stuck in a tool loop — try again)", toolEvents });
-  } catch (e) {
-    return NextResponse.json({ error: String(e.message || e), toolEvents }, { status: 502 });
-  }
+    },
+  });
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+  });
 }
+
