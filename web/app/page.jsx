@@ -34,16 +34,12 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="container">
-        <h1>单词复习</h1>
-        <div className="notice">
-          读取云端失败:{error}
-          <br />
-          请确认 Vercel/本地的环境变量 <code>INSFORGE_OSS_HOST</code> 和 <code>INSFORGE_ANON_KEY</code> 已设置,且云端有词。
-        </div>
+        <h1 className="page-title">Your library</h1>
+        <div className="notice">Couldn&apos;t reach the backend: {error}</div>
       </div>
     );
   }
-  if (!words) return <div className="container">加载中…</div>;
+  if (!words) return <div className="container">Loading…</div>;
 
   const now = Date.now();
   const active = words.filter((w) => w.status === "active" || !w.status);
@@ -56,7 +52,7 @@ export default function Dashboard() {
   const startToday = new Date();
   startToday.setHours(0, 0, 0, 0);
   const t0 = startToday.getTime();
-  const labels = ["今天", "+1", "+2", "+3", "+4", "+5", "+6"];
+  const labels = ["Today", "+1", "+2", "+3", "+4", "+5", "+6"];
   const buckets = [0, 0, 0, 0, 0, 0, 0];
   for (const w of active) {
     let idx = Math.floor((new Date(w.due).getTime() - t0) / DAY);
@@ -69,57 +65,73 @@ export default function Dashboard() {
 
   return (
     <div className="container">
-      <div className="header">
-        <div>
-          <h1>📚 单词复习</h1>
-          <div className="sub">间隔重复(SM-2 / 艾宾浩斯遗忘曲线)· 共 {words.length} 词</div>
+      <div className="medium-grid">
+        <div className="main-col">
+          <h1 className="page-title">Your library</h1>
+          <p className="page-sub">
+            {words.length} words captured while reading — scheduled on your forgetting curve.
+            {dueNow.length > 0 && (
+              <>
+                {" "}
+                <Link href="/tutor" style={{ color: "var(--green)", fontWeight: 500 }}>
+                  {dueNow.length} due — talk them through with Mia →
+                </Link>
+              </>
+            )}
+          </p>
+
+          <ul className="wlist">
+            {sorted.map((w) => {
+              const due = new Date(w.due).getTime();
+              const tag =
+                (w.reps || 0) === 0
+                  ? ["new", "new"]
+                  : due <= now
+                    ? ["due", "due"]
+                    : isMastered(w)
+                      ? ["ok", "solid"]
+                      : ["", ""];
+              return (
+                <li className="wrow" key={w.lemma}>
+                  {tag[1] && <span className={`tag ${tag[0]}`}>{tag[1]}</span>}
+                  <span className="w">{w.word}</span>
+                  <span className="c">{w.context || ""}</span>
+                  <span className="meta">{relDue(due, now)}</span>
+                  <button className="x" title="Remove" onClick={() => del(w.lemma)}>
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-        <Link className="btn green" href="/review">
-          ▶ 开始复习{dueNow.length ? ` (${dueNow.length})` : ""}
-        </Link>
-      </div>
 
-      <div className="grid">
-        <Stat n={dueNow.length} l="今天到期" />
-        <Stat n={newCount} l="新词" />
-        <Stat n={learning < 0 ? 0 : learning} l="复习中" />
-        <Stat n={mastered} l="已掌握" />
-        <Stat n={words.length} l="总计" />
-      </div>
+        <aside className="side-col">
+          <h3>At a glance</h3>
+          <div className="grid">
+            <Stat n={dueNow.length} l="Due today" />
+            <Stat n={newCount} l="New" />
+            <Stat n={learning < 0 ? 0 : learning} l="Learning" />
+            <Stat n={mastered} l="Mastered" />
+          </div>
 
-      <div className="card">
-        <h2>未来 7 天复习日程(遗忘曲线安排)</h2>
-        <div className="bars">
-          {buckets.map((c, i) => (
-            <div className="bar" key={i}>
-              <div className="cnt">{c || ""}</div>
-              <div className="fill" style={{ height: `${(c / maxBar) * 100}%` }} />
-              <div className="day">{labels[i]}</div>
+          <div className="card">
+            <h2>Next 7 days</h2>
+            <div className="bars">
+              {buckets.map((c, i) => (
+                <div className="bar" key={i}>
+                  <div className="cnt">{c || ""}</div>
+                  <div className="fill" style={{ height: `${(c / maxBar) * 100}%` }} />
+                  <div className="day">{labels[i]}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div className="card">
-        <h2>全部单词({words.length})</h2>
-        <ul className="wlist">
-          {sorted.map((w) => {
-            const due = new Date(w.due).getTime();
-            const tag =
-              (w.reps || 0) === 0 ? ["new", "新"] : due <= now ? ["due", "到期"] : isMastered(w) ? ["ok", "稳"] : ["", ""];
-            return (
-              <li className="wrow" key={w.lemma}>
-                {tag[1] && <span className={`tag ${tag[0]}`}>{tag[1]}</span>}
-                <span className="w">{w.word}</span>
-                <span className="c">{w.context || ""}</span>
-                <span className="meta">{relDue(due, now)}</span>
-                <button className="x" title="删除" onClick={() => del(w.lemma)}>
-                  ✕
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+          <Link className="btn green" href="/tutor">
+            Talk to Mia{dueNow.length ? ` · ${dueNow.length} due` : ""}
+          </Link>
+        </aside>
       </div>
     </div>
   );
@@ -136,8 +148,8 @@ function Stat({ n, l }) {
 
 function relDue(due, now) {
   const d = Math.round((due - now) / DAY);
-  if (due <= now) return "现在";
-  if (d <= 0) return "今天";
-  if (d === 1) return "明天";
-  return `${d} 天后`;
+  if (due <= now) return "now";
+  if (d <= 0) return "today";
+  if (d === 1) return "tomorrow";
+  return `in ${d} days`;
 }

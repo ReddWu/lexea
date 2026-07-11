@@ -82,30 +82,56 @@ async function saveRec(rec) {
   chrome.runtime.sendMessage({ type: "syncWord", record: rec }, () => void chrome.runtime.lastError);
 }
 
-// ---- free English definition (best-effort, cached into translation) --------
+// ---- free English definition + phonetic (best-effort, cached) --------------
+async function dictLookup(lemma) {
+  // inflected forms often miss (subpoenas → subpoena): strip common suffixes
+  const cands = [lemma];
+  if (/ies$/.test(lemma) && lemma.length > 4) cands.push(lemma.slice(0, -3) + "y");
+  if (/s$/.test(lemma) && !/(ss|us|is)$/.test(lemma) && lemma.length > 3) cands.push(lemma.slice(0, -1));
+  if (/ing$/.test(lemma) && lemma.length > 5) cands.push(lemma.slice(0, -3), lemma.slice(0, -3) + "e");
+  if (/ed$/.test(lemma) && lemma.length > 4) cands.push(lemma.slice(0, -2), lemma.slice(0, -2) + "e");
+  for (const c of cands) {
+    try {
+      const res = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(c));
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length) return data;
+    } catch (_e) {}
+  }
+  return null;
+}
+
 async function ensureDef(rec) {
-  if (rec.translation) return rec.translation;
-  try {
-    const res = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(rec.lemma));
-    if (!res.ok) return null;
-    const data = await res.json();
-    const out = [];
-    for (const entry of data) {
-      for (const m of entry.meanings || []) {
-        const d = m.definitions && m.definitions[0];
-        if (d && d.definition) out.push({ pos: m.partOfSpeech || "", def: d.definition });
+  if (rec.translation && rec.phonetic) return { def: rec.translation, phon: rec.phonetic };
+  const data = await dictLookup(rec.lemma);
+  let phon = rec.phonetic || null;
+  let text = rec.translation || null;
+  if (data) {
+    if (!phon) {
+      for (const entry of data) {
+        phon = entry.phonetic || (entry.phonetics || []).find((p) => p.text)?.text || null;
+        if (phon) break;
+      }
+    }
+    if (!text) {
+      const out = [];
+      for (const entry of data) {
+        for (const m of entry.meanings || []) {
+          const d = m.definitions && m.definitions[0];
+          if (d && d.definition) out.push({ pos: m.partOfSpeech || "", def: d.definition });
+          if (out.length >= 3) break;
+        }
         if (out.length >= 3) break;
       }
-      if (out.length >= 3) break;
+      if (out.length) text = out.map((o) => (o.pos ? `(${o.pos}) ` : "") + o.def).join("\n");
     }
-    if (!out.length) return null;
-    const text = out.map((o) => (o.pos ? `(${o.pos}) ` : "") + o.def).join("\n");
-    rec.translation = text;
-    await chrome.storage.local.set({ [KEY(rec.lemma)]: rec }); // cache
-    return text;
-  } catch (_e) {
-    return null;
+    // cache whatever we learned
+    let dirty = false;
+    if (text && !rec.translation) (rec.translation = text), (dirty = true);
+    if (phon && !rec.phonetic) (rec.phonetic = phon), (dirty = true);
+    if (dirty) await chrome.storage.local.set({ [KEY(rec.lemma)]: rec });
   }
+  return { def: text, phon };
 }
 
 // ---- rendering ------------------------------------------------------------
@@ -118,21 +144,21 @@ function highlight(sentence, word) {
 }
 
 function renderStats() {
-  statsEl.textContent = `本次 ${session.done}/${session.total} · 待复习 ${queue.length}`;
+  statsEl.textContent = `${session.done}/${session.total} reviewed · ${queue.length} left`;
 }
 
 function renderDone() {
   card.innerHTML = `<div class="done"><div class="big">🎉</div>
-    <p>本次复习完成!共复习 <b>${session.done}</b> 个词。</p>
-    <p style="font-size:13px;">下次到期的词会自动出现。可以关掉这个标签页了。</p></div>`;
-  statsEl.textContent = `完成 ${session.done}`;
+    <p>Session complete — <b>${session.done}</b> cards reviewed.</p>
+    <p style="font-size:13px;">Due words will reappear on schedule. You can close this tab.</p></div>`;
+  statsEl.textContent = `Done: ${session.done}`;
 }
 
 function renderFront(rec) {
   card.innerHTML = `
     <div class="word">${esc(rec.word)}</div>
     <div class="src">${rec.source_url ? `<a href="${esc(rec.source_url)}" target="_blank">${esc(rec.source_title || rec.source_url)}</a>` : ""}</div>
-    <div class="controls"><button class="reveal" id="reveal">显示答案 (空格)</button></div>`;
+    <div class="controls"><button class="reveal" id="reveal">Reveal (space)</button></div>`;
   document.getElementById("reveal").addEventListener("click", () => renderBack(rec));
 }
 
@@ -149,29 +175,32 @@ async function renderBack(rec) {
             `</div>`
         )
         .join("")
-    : `<div class="ctx" style="color:#9ca3af">(没有保存例句)</div>`;
+    : `<div class="ctx" style="color:#9ca3af">(no saved sentence)</div>`;
 
   card.innerHTML = `
     <div class="word">${esc(rec.word)}</div>
-    <div class="def" id="def">查词中…</div>
+    <div class="phon" id="phon" style="text-align:center;color:#6b6b6b;font-size:16px;margin-top:4px;font-family:Charter,Georgia,serif;"></div>
+    <div class="def" id="def">Looking it up…</div>
     <div class="back" style="display:block">
-      <div class="ctx-label">例句 / CONTEXT</div>
+      <div class="ctx-label">Context</div>
       ${ctxHtml}
     </div>
     <div class="controls">
-      <button class="grade g1" data-g="1">忘了<small>&lt;10分钟</small></button>
-      <button class="grade g2" data-g="2">难<small>1 天</small></button>
-      <button class="grade g3" data-g="3">会<small>${rec.reps ? Math.max(1, Math.round((rec.interval_days || 1) * (rec.ease || 2.5))) + " 天" : "1 天"}</small></button>
-      <button class="grade g4" data-g="4">简单<small>${rec.reps ? Math.max(1, Math.round((rec.interval_days || 1) * (rec.ease || 2.5) * 1.3)) + " 天" : "4 天"}</small></button>
+      <button class="grade g1" data-g="1">Forgot<small>&lt;10 min</small></button>
+      <button class="grade g2" data-g="2">Hard<small>1 day</small></button>
+      <button class="grade g3" data-g="3">Good<small>${rec.reps ? Math.max(1, Math.round((rec.interval_days || 1) * (rec.ease || 2.5))) + " days" : "1 day"}</small></button>
+      <button class="grade g4" data-g="4">Easy<small>${rec.reps ? Math.max(1, Math.round((rec.interval_days || 1) * (rec.ease || 2.5) * 1.3)) + " days" : "4 days"}</small></button>
     </div>`;
 
   card.querySelectorAll(".grade").forEach((b) =>
     b.addEventListener("click", () => grade(rec, parseInt(b.dataset.g, 10)))
   );
 
-  const def = await ensureDef(rec);
+  const { def, phon } = await ensureDef(rec);
   const defEl = document.getElementById("def");
-  if (defEl) defEl.textContent = def || "(无在线释义,看例句记忆)";
+  if (defEl) defEl.textContent = def || "(no dictionary entry — recall it from the sentence)";
+  const phonEl = document.getElementById("phon");
+  if (phonEl && phon) phonEl.textContent = phon;
 }
 
 async function grade(rec, rating) {
@@ -211,8 +240,8 @@ document.addEventListener("keydown", (e) => {
   renderStats();
   if (!queue.length) {
     card.innerHTML = `<div class="done"><div class="big">✅</div>
-      <p>现在没有到期需要复习的词。</p>
-      <p style="font-size:13px;">去网页上多选些词,或等已存的词到期。</p></div>`;
+      <p>Nothing due right now.</p>
+      <p style="font-size:13px;">Save more words while you read, or come back when reviews are due.</p></div>`;
     return;
   }
   next();

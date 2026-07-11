@@ -68,7 +68,7 @@ function escapeHtml(s) {
 }
 
 function render(words) {
-  $("count").textContent = `共 ${words.length} 词`;
+  $("count").textContent = `${words.length} words`;
   if (!words.length) {
     $("empty").style.display = "block";
     $("list").innerHTML = "";
@@ -78,7 +78,7 @@ function render(words) {
   $("list").innerHTML = words
     .map(
       (w) =>
-        `<li><button class="del" data-lemma="${escapeHtml(w.lemma)}" title="删除">✕</button>` +
+        `<li><button class="del" data-lemma="${escapeHtml(w.lemma)}" title="Remove">✕</button>` +
         `<div class="w">${escapeHtml(w.word)}</div>` +
         (w.context ? `<div class="c">${escapeHtml(w.context)}</div>` : "") +
         `</li>`
@@ -111,14 +111,14 @@ async function deleteWord(lemma) {
   $("copy").addEventListener("click", async () => {
     const w = await allWords();
     if (!w.length) {
-      $("copyStatus").textContent = "还没有单词";
+      $("copyStatus").textContent = "No words yet";
       return;
     }
     try {
       await navigator.clipboard.writeText(buildInstruction(w));
-      $("copyStatus").textContent = "✓ 已复制 · 粘进 ChatGPT 设置 → 个性化 → 自定义指令";
+      $("copyStatus").textContent = "✓ Copied — paste into your AI\u2019s custom instructions";
     } catch (_e) {
-      $("copyStatus").textContent = "复制失败,请重试";
+      $("copyStatus").textContent = "Copy failed — try again";
     }
   });
 
@@ -130,6 +130,11 @@ async function deleteWord(lemma) {
     const w = await allWords();
     download("vocab.json", JSON.stringify(w, null, 2), "application/json");
   });
-  $("opt").addEventListener("click", () => chrome.runtime.openOptionsPage());
   $("settings").addEventListener("click", () => chrome.runtime.openOptionsPage());
+
+  $("talk").addEventListener("click", async () => {
+    const { miaBase } = await chrome.storage.local.get("miaBase");
+    const base = (miaBase || "https://mia.butterbase.dev").replace(/\/+$/, "");
+    chrome.tabs.create({ url: `${base}/tutor` });
+  });
 })();

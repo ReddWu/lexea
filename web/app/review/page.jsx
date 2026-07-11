@@ -11,7 +11,8 @@ export default function Review() {
   const [total, setTotal] = useState(0);
   const [done, setDone] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [def, setDef] = useState("查词中…");
+  const [def, setDef] = useState("Looking it up…");
+  const [phon, setPhon] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -39,27 +40,50 @@ export default function Review() {
   const reveal = useCallback(async () => {
     if (!current) return;
     setRevealed(true);
-    if (current.translation) {
-      setDef(current.translation);
-      return;
-    }
-    setDef("查词中…");
+    setPhon(current.phonetic || "");
+    const hasTranslation = Boolean(current.translation);
+    setDef(hasTranslation ? current.translation : "Looking it up…");
+    if (hasTranslation && current.phonetic) return; // nothing left to look up
+    const noEntry = "(no dictionary entry — recall it from the sentence)";
     try {
-      const r = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(current.lemma));
-      if (!r.ok) return setDef("(无在线释义,看例句记忆)");
+      const lookup = (lemma) =>
+        fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(lemma));
+      let r = await lookup(current.lemma);
+      if (r.status === 404) {
+        const base = baseForm(current.lemma);
+        if (base) r = await lookup(base);
+      }
+      if (!r.ok) {
+        if (!hasTranslation) setDef(noEntry);
+        return;
+      }
       const data = await r.json();
-      const out = [];
-      for (const entry of data) {
-        for (const m of entry.meanings || []) {
-          const d = m.definitions && m.definitions[0];
-          if (d?.definition) out.push((m.partOfSpeech ? `(${m.partOfSpeech}) ` : "") + d.definition);
+      if (!current.phonetic) {
+        const entry = (data || []).find((e) => e.phonetic || e.phonetics?.find((p) => p.text));
+        const text = entry ? entry.phonetic || entry.phonetics?.find((p) => p.text)?.text : "";
+        if (text) {
+          setPhon(text);
+          fetch("/api/words", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lemma: current.lemma, patch: { phonetic: text } }),
+          }).catch(() => {});
+        }
+      }
+      if (!hasTranslation) {
+        const out = [];
+        for (const entry of data) {
+          for (const m of entry.meanings || []) {
+            const d = m.definitions && m.definitions[0];
+            if (d?.definition) out.push((m.partOfSpeech ? `(${m.partOfSpeech}) ` : "") + d.definition);
+            if (out.length >= 3) break;
+          }
           if (out.length >= 3) break;
         }
-        if (out.length >= 3) break;
+        setDef(out.length ? out.join("\n") : noEntry);
       }
-      setDef(out.length ? out.join("\n") : "(无在线释义,看例句记忆)");
     } catch {
-      setDef("(无在线释义,看例句记忆)");
+      if (!hasTranslation) setDef(noEntry);
     }
   }, [current]);
 
@@ -79,7 +103,8 @@ export default function Review() {
         return rest;
       });
       setRevealed(false);
-      setDef("查词中…");
+      setDef("Looking it up…");
+      setPhon("");
     },
     [current]
   );
@@ -102,40 +127,40 @@ export default function Review() {
   return (
     <div className="review-wrap">
       <div className="header" style={{ padding: "14px 20px", borderBottom: "1px solid var(--line)", background: "#fff" }}>
-        <Link href="/">← 看板</Link>
-        <span className="sub">{queue ? `本次 ${done}/${total} · 待复习 ${queue.length}` : ""}</span>
+        <Link href="/">← Library</Link>
+        <span className="sub">{queue ? `${done}/${total} reviewed · ${queue.length} left` : ""}</span>
       </div>
       <div className="review-main">
         <div className="flash">
           {error ? (
-            <div className="done">读取失败:{error}</div>
+            <div className="done">Failed to load: {error}</div>
           ) : !queue ? (
-            "加载中…"
+            "Loading…"
           ) : !current ? (
             total === 0 ? (
               <div className="done">
                 <div className="big">✅</div>
-                <p>现在没有到期需要复习的词。</p>
-                <p className="sub">去网页上多选些词,或等已存的词到期。</p>
+                <p>Nothing due right now.</p>
+                <p className="sub">Save more words while you read, or come back when reviews are due.</p>
               </div>
             ) : (
               <div className="done">
                 <div className="big">🎉</div>
-                <p>本次复习完成!共复习 <b>{done}</b> 个词。</p>
-                <Link className="btn blue" href="/">回看板</Link>
+                <p>Session complete — <b>{done}</b> cards reviewed.</p>
+                <Link className="btn blue" href="/">Back to library</Link>
               </div>
             )
           ) : (
-            <Card card={current} revealed={revealed} def={def} onReveal={reveal} onGrade={grade} />
+            <Card card={current} revealed={revealed} def={def} phon={phon} onReveal={reveal} onGrade={grade} />
           )}
         </div>
       </div>
-      {current && <div className="hintbar">快捷键:空格 = 显示答案 · 1 忘了 / 2 难 / 3 会 / 4 简单</div>}
+      {current && <div className="hintbar">Space = reveal · 1 forgot / 2 hard / 3 good / 4 easy</div>}
     </div>
   );
 }
 
-function Card({ card, revealed, def, onReveal, onGrade }) {
+function Card({ card, revealed, def, phon, onReveal, onGrade }) {
   const contexts = (card.contexts && card.contexts.length ? card.contexts : card.context ? [{ sentence: card.context }] : [])
     .slice(-4)
     .reverse();
@@ -153,13 +178,21 @@ function Card({ card, revealed, def, onReveal, onGrade }) {
       {!revealed ? (
         <div className="controls">
           <button className="g g3 reveal" onClick={onReveal}>
-            显示答案 (空格)
+            Reveal (space)
           </button>
         </div>
       ) : (
         <>
+          {phon ? (
+            <div
+              className="phon"
+              style={{ color: "var(--muted)", fontSize: 16, textAlign: "center", marginTop: 4, fontFamily: "var(--serif)" }}
+            >
+              {phon}
+            </div>
+          ) : null}
           <div className="def">{def}</div>
-          <div className="ctx-label">例句 / CONTEXT</div>
+          <div className="ctx-label">Context</div>
           {contexts.length ? (
             contexts.map((c, i) => (
               <div className="ctx" key={i}>
@@ -169,27 +202,36 @@ function Card({ card, revealed, def, onReveal, onGrade }) {
             ))
           ) : (
             <div className="ctx" style={{ color: "#9ca3af" }}>
-              (没有保存例句)
+              (no saved sentence)
             </div>
           )}
           <div className="controls">
             <button className="g g1" onClick={() => onGrade(1)}>
-              忘了<small>&lt;10分钟</small>
+              Forgot<small>&lt;10 min</small>
             </button>
             <button className="g g2" onClick={() => onGrade(2)}>
-              难<small>1 天</small>
+              Hard<small>1 day</small>
             </button>
             <button className="g g3" onClick={() => onGrade(3)}>
-              会
+              Good
             </button>
             <button className="g g4" onClick={() => onGrade(4)}>
-              简单
+              Easy
             </button>
           </div>
         </>
       )}
     </>
   );
+}
+
+// conservative base-form guess for dictionary retry: "subpoenas" → "subpoena"
+function baseForm(lemma) {
+  const w = String(lemma).toLowerCase();
+  if (w.length > 4 && w.endsWith("ing")) return w.slice(0, -3);
+  if (w.length > 3 && w.endsWith("ed")) return w.slice(0, -2);
+  if (w.length > 2 && w.endsWith("s") && !/(ss|us|is)$/.test(w)) return w.slice(0, -1);
+  return null;
 }
 
 function highlight(sentence, word) {

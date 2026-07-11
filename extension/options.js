@@ -1,140 +1,89 @@
+// options.js — Mia extension settings: backend URL + manual sync helpers.
 const $ = (id) => document.getElementById(id);
+const DEFAULT_BASE = "https://mia.butterbase.dev";
 
-chrome.storage.local
-  .get(["autoSave", "cloudSync", "cloudUrl", "cloudKey"])
-  .then(({ autoSave, cloudSync, cloudUrl, cloudKey }) => {
-    $("autoSave").checked = autoSave !== false; // default on
-    $("cloudSync").checked = !!cloudSync;
-    $("cloudUrl").value = cloudUrl || "";
-    $("cloudKey").value = cloudKey || "";
-  });
+async function base() {
+  const { miaBase } = await chrome.storage.local.get("miaBase");
+  return (miaBase || DEFAULT_BASE).replace(/\/+$/, "");
+}
 
-function setStatus(msg, color) {
+function status(msg, ok = true) {
   $("status").textContent = msg;
-  $("status").style.color = color || "#111827";
+  $("status").style.color = ok ? "#1a8917" : "#c94a4a";
 }
 
-$("save").addEventListener("click", async () => {
-  await chrome.storage.local.set({
-    autoSave: $("autoSave").checked,
-    cloudSync: $("cloudSync").checked,
-    cloudUrl: $("cloudUrl").value.trim().replace(/\/+$/, ""),
-    cloudKey: $("cloudKey").value.trim(),
-  });
-  setStatus("✓ 已保存", "#16a34a");
-});
-
-// upsert one local record to the cloud by lemma (PATCH then POST), real status
-async function cloudUpsert(base, key, rec) {
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${key}`,
-    Prefer: "return=representation",
-  };
-  const { id, times_used_in_chat, ...body } = rec;
-  const patch = await fetch(`${base}/api/database/records/words?lemma=eq.${encodeURIComponent(rec.lemma)}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify(body),
-  });
-  if (patch.ok) {
-    const rows = await patch.json().catch(() => []);
-    if (Array.isArray(rows) && rows.length) return true; // updated existing
-  }
-  const post = await fetch(`${base}/api/database/records/words`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify([body]),
-  });
-  return post.ok;
-}
-
-$("backfill").addEventListener("click", async () => {
-  const base = $("cloudUrl").value.trim().replace(/\/+$/, "");
-  const key = $("cloudKey").value.trim();
-  if (!base || !key) {
-    setStatus("请先填 OSS Host 和 anon key", "#b91c1c");
-    return;
-  }
-  // persist settings first so background sync uses them too
-  await chrome.storage.local.set({
-    autoSave: $("autoSave").checked,
-    cloudSync: $("cloudSync").checked,
-    cloudUrl: base,
-    cloudKey: key,
-  });
+async function localWords() {
   const all = await chrome.storage.local.get(null);
-  const words = Object.keys(all)
+  return Object.keys(all)
     .filter((k) => k.startsWith("w:"))
     .map((k) => all[k]);
-  if (!words.length) {
-    setStatus("本地还没有词", "#b91c1c");
-    return;
-  }
-  let ok = 0;
-  for (let i = 0; i < words.length; i++) {
-    setStatus(`同步中 ${i}/${words.length}…`, "#6b7280");
-    try {
-      if (await cloudUpsert(base, key, words[i])) ok++;
-    } catch (_e) {
-      /* skip */
-    }
-  }
-  setStatus(`✓ 已上传 ${ok}/${words.length} 个词到云端`, ok === words.length ? "#16a34a" : "#b91c1c");
-});
+}
 
-$("pull").addEventListener("click", async () => {
-  const base = $("cloudUrl").value.trim().replace(/\/+$/, "");
-  const key = $("cloudKey").value.trim();
-  if (!base || !key) {
-    setStatus("请先填 OSS Host 和 anon key", "#b91c1c");
-    return;
-  }
-  setStatus("拉取中…", "#6b7280");
-  let cloud;
-  try {
-    const res = await fetch(`${base}/api/database/records/words?limit=1000`, {
-      headers: { Authorization: `Bearer ${key}` },
-    });
-    if (!res.ok) {
-      setStatus(`✗ HTTP ${res.status}: ${await res.text()}`, "#b91c1c");
-      return;
-    }
-    cloud = await res.json();
-  } catch (e) {
-    setStatus("✗ " + e, "#b91c1c");
-    return;
-  }
-  const all = await chrome.storage.local.get(null);
-  const toSet = {};
-  let added = 0;
-  for (const w of cloud) {
-    if (!w || !w.lemma) continue;
-    const k = "w:" + w.lemma;
-    if (!all[k]) {
-      toSet[k] = w; // cloud-only word (e.g. added by ChatGPT) → bring it local
-      added++;
-    }
-  }
-  if (added) await chrome.storage.local.set(toSet);
-  setStatus(`✓ 从云端拉取了 ${added} 个新词到本地`, "#16a34a");
+(async () => {
+  const { miaBase } = await chrome.storage.local.get("miaBase");
+  $("miaBase").value = miaBase || DEFAULT_BASE;
+})();
+
+$("save").addEventListener("click", async () => {
+  const v = $("miaBase").value.trim().replace(/\/+$/, "");
+  await chrome.storage.local.set({ miaBase: v || DEFAULT_BASE });
+  status("✓ Saved");
 });
 
 $("test").addEventListener("click", async () => {
-  const url = $("cloudUrl").value.trim().replace(/\/+$/, "");
-  const key = $("cloudKey").value.trim();
-  if (!url || !key) {
-    setStatus("请先填 OSS Host 和 anon key", "#b91c1c");
-    return;
-  }
-  setStatus("测试中…", "#6b7280");
+  status("Testing…");
   try {
-    const res = await fetch(`${url}/api/database/records/words?select=id&limit=1`, {
-      headers: { Authorization: `Bearer ${key}` },
-    });
-    if (res.ok) setStatus("✓ 连接成功,words 表可访问", "#16a34a");
-    else setStatus(`✗ HTTP ${res.status}: ${await res.text()}`, "#b91c1c");
+    const res = await fetch(`${await base()}/api/words`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.status);
+    status(`✓ Connected — ${data.words.length} words in the cloud`);
   } catch (e) {
-    setStatus("✗ " + e, "#b91c1c");
+    status(`✗ ${e.message || e}`, false);
+  }
+});
+
+$("backfill").addEventListener("click", async () => {
+  const words = await localWords();
+  if (!words.length) return status("No local words to upload", false);
+  status(`Uploading 0/${words.length}…`);
+  const b = await base();
+  let ok = 0,
+    fail = 0;
+  for (const rec of words) {
+    const { id, times_used_in_chat, ...body } = rec;
+    try {
+      const res = await fetch(`${b}/api/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      res.ok ? ok++ : fail++;
+    } catch {
+      fail++;
+    }
+    status(`Uploading ${ok + fail}/${words.length}…`);
+  }
+  status(fail ? `Done: ${ok} uploaded, ${fail} failed` : `✓ All ${ok} words uploaded`, !fail);
+});
+
+$("pull").addEventListener("click", async () => {
+  status("Pulling…");
+  try {
+    const res = await fetch(`${await base()}/api/words`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.status);
+    const local = await chrome.storage.local.get(null);
+    let added = 0;
+    for (const w of data.words || []) {
+      const k = "w:" + w.lemma;
+      if (!local[k]) {
+        const { id, ...rec } = w;
+        await chrome.storage.local.set({ [k]: rec });
+        added++;
+      }
+    }
+    status(`✓ Pulled ${added} new word${added === 1 ? "" : "s"}`);
+  } catch (e) {
+    status(`✗ ${e.message || e}`, false);
   }
 });

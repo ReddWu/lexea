@@ -1,68 +1,48 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>单词本采集 · 设置</title>
+  <title>Mia · Settings</title>
   <style>
-    body{font:14px/1.6 -apple-system,system-ui,sans-serif;max-width:580px;margin:40px auto;padding:0 20px;color:#111827;}
-    h1{font-size:20px;}
+    :root{--ink:#242424;--muted:#6b6b6b;--line:#e6e6e6;--green:#1a8917;--green-dark:#156d12;--serif:"Charter","Georgia",serif;}
+    body{font:14px/1.6 -apple-system,system-ui,sans-serif;max-width:560px;margin:48px auto;padding:0 20px;color:var(--ink);}
+    h1{font:700 28px/1.2 var(--serif);letter-spacing:-0.4px;}
     h2{font-size:15px;margin:30px 0 4px;}
-    .card{border:1px solid #eee;border-radius:12px;padding:16px 18px;margin-top:12px;}
+    .card{border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-top:12px;}
     label{display:block;font-weight:600;margin:14px 0 6px;}
-    input[type=text],input[type=url]{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;}
-    .row{display:flex;align-items:center;gap:10px;margin-top:6px;}
-    .row label{margin:0;font-weight:600;}
-    button{margin-top:18px;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;}
-    button.alt{background:#374151;margin-left:8px;}
-    button:hover{filter:brightness(1.08);}
-    .hint{color:#6b7280;font-size:12px;margin-top:4px;}
+    input[type=url]{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);border-radius:6px;font-size:13px;}
+    button{margin-top:18px;background:var(--green);color:#fff;border:none;border-radius:99px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;}
+    button.alt{background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:8px;}
+    button:hover{filter:brightness(0.95);}
+    .hint{color:var(--muted);font-size:12px;margin-top:4px;}
     #status{margin-top:16px;font-weight:600;}
-    code{background:#f3f4f6;padding:1px 5px;border-radius:4px;}
-    .badge{display:inline-block;background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;}
+    code{background:#f5f5f5;padding:1px 5px;border-radius:4px;}
   </style>
 </head>
 <body>
-  <h1>单词本采集 · 设置 <span class="badge">本地优先 · 无需登录</span></h1>
-  <p class="hint">默认所有单词存在你浏览器本地,装上就能用。下面的云同步是可选的。</p>
+  <h1>Mia · Settings</h1>
+  <p class="hint">
+    Words are saved in your browser first (local-first, no login) and mirrored to your Mia
+    backend so the tutor, flashcards and dashboard all see them.
+  </p>
 
-  <h2>① 采集行为</h2>
+  <h2>Backend</h2>
   <div class="card">
-    <div class="row">
-      <input type="checkbox" id="autoSave" />
-      <label for="autoSave">选词自动保存(选中单个英文单词即静默存入,无需点按钮;配合 Trancy 用)</label>
-    </div>
-    <div class="hint">关掉后,选词会先冒出「★存入单词本」按钮,点了才存。词组/多词选区始终走按钮。</div>
+    <label>Mia backend URL</label>
+    <input type="url" id="miaBase" placeholder="https://mia.butterbase.dev" />
+    <div class="hint">Default is the hosted app. Point it at <code>http://localhost:3002</code> for local development.</div>
+    <button id="test" class="alt" style="margin-left:0;">Test connection</button>
   </div>
 
-  <h2>② 云同步(可选 · 用 InsForge)</h2>
+  <h2>Sync</h2>
   <div class="card">
-    <p class="hint" style="margin-top:0;">
-      不开也能正常用,只是不跨设备、不喂给 AI。开启后,每次保存会把单词镜像到你的 InsForge 项目,
-      以便复习网站 / openclaw 读取。
-    </p>
-    <div class="row">
-      <input type="checkbox" id="cloudSync" />
-      <label for="cloudSync">开启云同步</label>
-    </div>
-
-    <label>InsForge OSS Host</label>
-    <input type="url" id="cloudUrl" placeholder="https://xxxxxxx.us-east.insforge.app" />
-    <div class="hint">就是 <code>.insforge/project.json</code> 里的 <code>oss_host</code>。</div>
-
-    <label>anon key</label>
-    <input type="text" id="cloudKey" placeholder="anon_..." />
-    <div class="hint">用 <code>anon</code> 那把(不是 <code>ik_</code> 开头的 api_key,那是管理员密钥)。</div>
-
-    <button id="test" class="alt">测试连接</button>
-    <button id="backfill">⬆ 把本地已存的词全部上传云端</button>
-    <div class="hint">开启云同步只会上传"之后"新存的词;这个按钮把你<b>现有</b>的本地词一次性补传上去。</div>
-    <button id="pull" style="margin-top:10px;">⬇ 从云端拉取新词到本地</button>
-    <div class="hint">把云端有、本地没有的词(比如 ChatGPT 用 addWord 加的)拉下来,这样复习页和"复制弱词"也能看到。不会覆盖本地已有的词。</div>
+    <button id="backfill" style="margin-top:0;">⬆ Upload all local words to the backend</button>
+    <div class="hint">New words sync automatically as you save them; this pushes everything already stored locally.</div>
+    <button id="pull" style="margin-top:14px;">⬇ Pull words from the backend</button>
+    <div class="hint">Fetches words that exist in the cloud but not in this browser (e.g. saved by Mia in chat). Never overwrites local words.</div>
   </div>
 
-  <div>
-    <button id="save">保存全部设置</button>
-  </div>
+  <div><button id="save">Save settings</button></div>
   <div id="status"></div>
 
   <script src="options.js"></script>

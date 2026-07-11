@@ -23,3 +23,8 @@ node_modules/
 # Next.js build output
 .next/
 out/
+
+# hackathon local artifacts
+.venv/
+everos-data/
+web/.vercel/

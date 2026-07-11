@@ -1,19 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "Vocab Capture · 单词本采集",
+  "name": "Mia — Save words while you read",
   "version": "0.1.0",
-  "description": "选中任意单词即可保存到你自己的单词库,自动连同所在原句(context)、来源网址一起记录。默认存在浏览器本地,可选同步到 InsForge。",
-  "permissions": ["storage", "unlimitedStorage"],
-  "background": { "service_worker": "background.js" },
+  "description": "Select any word on any page — Mia saves it with its sentence, shows a plain-English meaning + 中文, and weaves it back into your AI tutoring sessions.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "单词本采集"
+    "default_title": "Mia vocabulary"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ]

@@ -21,7 +21,7 @@ export default function Login() {
         window.location.href = "/";
       } else {
         const d = await res.json().catch(() => ({}));
-        setErr(d.error || "密码错误");
+        setErr(d.error || "Wrong password");
       }
     } catch (e2) {
       setErr(String(e2));
@@ -32,18 +32,18 @@ export default function Login() {
 
   return (
     <div className="login">
-      <h1>🔒 单词复习</h1>
+      <h1>🔒 Mia</h1>
       <form onSubmit={submit}>
         <input
           type="password"
-          placeholder="输入访问密码"
+          placeholder="Access password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
           autoFocus
         />
         <div className="err">{err}</div>
         <button className="btn blue" type="submit" disabled={busy} style={{ width: "100%" }}>
-          {busy ? "…" : "进入"}
+          {busy ? "…" : "Enter"}
         </button>
       </form>
     </div>

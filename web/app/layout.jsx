@@ -1,14 +1,32 @@
 import "./globals.css";
+import Link from "next/link";
 
 export const metadata = {
-  title: "单词复习 · 艾宾浩斯",
-  description: "用间隔重复(SM-2 / 艾宾浩斯遗忘曲线)复习你的单词,跨设备。",
+  title: "Mia — the words you save show up in every conversation",
+  description:
+    "Save words while you read. Mia schedules them on your forgetting curve and weaves them back into natural AI conversation.",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="zh">
-      <body>{children}</body>
+    <html lang="en">
+      <body>
+        <nav className="topnav">
+          <Link className="brand" href="/">
+            Mia
+          </Link>
+          <div className="navlinks">
+            <Link href="/">Library</Link>
+            <Link href="/review">Flashcards</Link>
+            <Link href="/memory">Memory</Link>
+            <Link href="/extension">Extension</Link>
+            <Link className="pill" href="/tutor">
+              Talk to Mia
+            </Link>
+          </div>
+        </nav>
+        {children}
+      </body>
     </html>
   );
 }

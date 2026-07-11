@@ -1,18 +1,68 @@
 // background.js — local-first store. Words live in chrome.storage.local
-// (one key per word: "w:<lemma>"). If the user opts into cloud sync, each
-// capture is ALSO mirrored to their InsForge project (best-effort, non-blocking).
+// (one key per word: "w:<lemma>"). Each capture is ALSO mirrored through the
+// Mia backend (Next.js → Butterbase) — best-effort, non-blocking, no keys in
+// the extension. Override the backend base URL via chrome.storage `miaBase`.
 
 const KEY = (lemma) => "w:" + lemma;
 const nowISO = () => new Date().toISOString();
+const DEFAULT_MIA_BASE = "https://mia.butterbase.dev"; // set chrome.storage `miaBase` to http://localhost:3002 for local dev
 
-async function getCloud() {
-  const { cloudUrl, cloudKey, cloudSync } = await chrome.storage.local.get([
-    "cloudUrl",
-    "cloudKey",
-    "cloudSync",
-  ]);
-  const url = (cloudUrl || "").replace(/\/+$/, "");
-  return { url, key: cloudKey || "", on: !!cloudSync && !!url && !!cloudKey };
+async function miaBase() {
+  const { miaBase } = await chrome.storage.local.get("miaBase");
+  return (miaBase || DEFAULT_MIA_BASE).replace(/\/+$/, "");
+}
+
+// --- inflection-aware dedup -----------------------------------------------
+// "running", "runs", "ran" and "run" are one word. Conservative on purpose:
+// plural/3rd-person -s, -ing, -ed and common irregulars only. We deliberately
+// do NOT strip -er/-est/-ly (teacher ≠ teach, writer ≠ write).
+const IRREGULAR = {
+  went:"go", gone:"go", ran:"run", ate:"eat", eaten:"eat", was:"be", were:"be", been:"be",
+  children:"child", mice:"mouse", feet:"foot", teeth:"tooth", men:"man", women:"woman",
+  people:"person", geese:"goose", took:"take", taken:"take", made:"make", said:"say",
+  saw:"see", seen:"see", came:"come", knew:"know", known:"know", thought:"think",
+  bought:"buy", brought:"bring", felt:"feel", kept:"keep", left:"leave", lost:"lose",
+  met:"meet", paid:"pay", sold:"sell", told:"tell", understood:"understand", wrote:"write",
+  written:"write", spoke:"speak", spoken:"speak", broke:"break", broken:"break",
+  chose:"choose", chosen:"choose", drove:"drive", driven:"drive", fell:"fall", fallen:"fall",
+  flew:"fly", flown:"fly", forgot:"forget", forgotten:"forget", gave:"give", given:"give",
+  grew:"grow", grown:"grow", held:"hold", led:"lead", rose:"rise", risen:"rise",
+  sang:"sing", sung:"sing", sat:"sit", slept:"sleep", stood:"stand", swam:"swim",
+  threw:"throw", thrown:"throw", woke:"wake", woken:"wake", wore:"wear", worn:"wear", won:"win",
+};
+const CONS = "bcdfghjklmnpqrstvwxz";
+
+function baseCandidates(w) {
+  const out = new Set();
+  if (IRREGULAR[w]) out.add(IRREGULAR[w]);
+  // plural / 3rd person
+  if (w.endsWith("ies") && w.length > 4) out.add(w.slice(0, -3) + "y");
+  if (/(ches|shes|xes|zes|sses|oes)$/.test(w)) out.add(w.slice(0, -2));
+  if (w.endsWith("s") && !/(ss|us|is)$/.test(w) && w.length > 3) out.add(w.slice(0, -1));
+  // -ing / -ed with un-doubling and e-restoration
+  for (const [suf, min] of [["ing", 5], ["ed", 4]]) {
+    if (w.endsWith(suf) && w.length > min) {
+      const s = w.slice(0, -suf.length);
+      out.add(s); // walk(ing) → walk
+      out.add(s + "e"); // mak(ing) → make
+      if (s.length > 2 && s.at(-1) === s.at(-2) && CONS.includes(s.at(-1))) out.add(s.slice(0, -1)); // runn → run
+    }
+  }
+  if (w.endsWith("ied") && w.length > 4) out.add(w.slice(0, -3) + "y"); // studied → study
+  out.delete(w);
+  return [...out];
+}
+
+// Resolve which storage key an incoming word belongs to: exact lemma first,
+// then "incoming is a variant of a stored base", then the reverse.
+async function resolveLemma(word) {
+  const lemma = (word || "").trim().toLowerCase();
+  const all = await chrome.storage.local.get(null);
+  const have = new Set(Object.keys(all).filter((k) => k.startsWith("w:")).map((k) => k.slice(2)));
+  if (have.has(lemma)) return lemma;
+  for (const c of baseCandidates(lemma)) if (have.has(c)) return c;
+  for (const l of have) if (baseCandidates(l).includes(lemma)) return l;
+  return lemma;
 }
 
 function newRecord(p) {
@@ -45,8 +95,8 @@ function newRecord(p) {
 }
 
 async function saveLocal(p) {
-  const lemma = (p.word || "").trim().toLowerCase();
-  if (!lemma) throw new Error("空词");
+  if (!(p.word || "").trim()) throw new Error("empty word");
+  const lemma = await resolveLemma(p.word); // inflection-aware: may land on an existing record
   const k = KEY(lemma);
   const cur = (await chrome.storage.local.get(k))[k];
   let rec;
@@ -59,7 +109,7 @@ async function saveLocal(p) {
       }
       rec.context = sentence;
     }
-    rec.word = p.word.trim();
+    // keep the originally-saved surface form; a variant only adds context
     if (p.url) rec.source_url = p.url;
     if (p.title) rec.source_title = p.title;
     if (rec.status !== "archived") rec.status = "active"; // re-seeing a "known" word reactivates it
@@ -71,55 +121,121 @@ async function saveLocal(p) {
   return rec;
 }
 
-// Mirror the locally-merged record to InsForge by upserting on `lemma`.
-// PATCH first (existing word); if nothing matched, POST a new row. We never
-// send `id` (DB-generated) or `times_used_in_chat` (owned by openclaw).
+// Mirror the locally-merged record through the Mia backend (upsert on lemma).
+// We never send `id` (DB-generated) or `times_used_in_chat` (owned by the agent).
 function cloudBody(rec) {
   const { id, times_used_in_chat, ...rest } = rec;
   return rest;
 }
 
 async function pushCloud(rec) {
-  const { url, key, on } = await getCloud();
-  if (!on) return;
-  const base = `${url}/api/database/records/words`;
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${key}`,
-    Prefer: "return=representation",
-  };
-  const body = cloudBody(rec);
   try {
-    const res = await fetch(`${base}?lemma=eq.${encodeURIComponent(rec.lemma)}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(body),
+    const base = await miaBase();
+    await fetch(`${base}/api/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cloudBody(rec)),
     });
-    if (res.ok) {
-      const rows = await res.json().catch(() => []);
-      if (Array.isArray(rows) && rows.length > 0) return; // updated existing
-    }
-    // not found -> insert (POST body must be an array)
-    await fetch(base, { method: "POST", headers, body: JSON.stringify([body]) });
   } catch (_e) {
     // best-effort; local is the source of truth
   }
 }
 
 async function deleteCloud(lemma) {
-  const { url, key, on } = await getCloud();
-  if (!on) return;
   try {
-    await fetch(`${url}/api/database/records/words?lemma=eq.${encodeURIComponent(lemma)}`, {
+    const base = await miaBase();
+    await fetch(`${base}/api/words`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${key}` },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lemma }),
     });
   } catch (_e) {
     // best-effort
   }
 }
 
+// --- word info for the "Save to Mia" card -------------------------------
+// Merges two sources (both CORS-open, called from the service worker):
+//   1. dictionaryapi.dev  → phonetic (IPA) + fallback English definition
+//   2. the Mia backend /api/define (Claude) → plain-English explanation + 中文
+// Results are written back onto the stored record (best-effort).
+async function fetchDictOnce(word) {
+  const res = await fetch(
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  const entry = Array.isArray(data) ? data[0] : null;
+  if (!entry) return null;
+  const phonetic =
+    entry.phonetic || (entry.phonetics || []).find((p) => p.text)?.text || null;
+  const def =
+    (entry.meanings || [])
+      .flatMap((m) => m.definitions || [])
+      .map((d) => d.definition)
+      .find(Boolean) || null;
+  return { phonetic, dictDef: def };
+}
+
+async function fetchDict(word) {
+  try {
+    const w = word.toLowerCase();
+    // inflected forms often miss (subpoenas → subpoena): fall back to base candidates
+    for (const cand of [w, ...baseCandidates(w)]) {
+      const hit = await fetchDictOnce(cand);
+      if (hit && (hit.phonetic || hit.dictDef)) return hit;
+    }
+    return {};
+  } catch (_e) {
+    return {};
+  }
+}
+
+async function fetchDefine(word, context) {
+  const url = `${await miaBase()}/api/define`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word, context }),
+    });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return { plain: data.plain || null, zh: data.zh || null };
+  } catch (_e) {
+    return {}; // backend not running — dictionary fallback still works
+  }
+}
+
+async function defineWord(p) {
+  const [dict, ai] = await Promise.all([fetchDict(p.word), fetchDefine(p.word, p.context)]);
+  const info = {
+    phonetic: dict.phonetic || null,
+    plain: ai.plain || dict.dictDef || null,
+    zh: ai.zh || null,
+  };
+  // write back onto the saved record (best-effort; variant-aware)
+  const lemma = await resolveLemma(p.word);
+  const k = KEY(lemma);
+  const cur = (await chrome.storage.local.get(k))[k];
+  if (cur) {
+    if (info.zh && !cur.translation) cur.translation = info.zh;
+    if (info.plain) cur.definition = info.plain;
+    if (info.phonetic) cur.phonetic = info.phonetic;
+    cur.updated_at = nowISO();
+    await chrome.storage.local.set({ [k]: cur });
+    pushCloud(cur); // fire-and-forget
+  }
+  return info;
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type === "define" && msg.payload?.word) {
+    defineWord(msg.payload)
+      .then((info) => sendResponse({ ok: true, ...info }))
+      .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true; // async response
+  }
   if (msg?.type === "capture") {
     saveLocal(msg.payload)
       .then((rec) => {

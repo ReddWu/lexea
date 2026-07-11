@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +10,7 @@ export async function POST(req) {
   if (!expected) return NextResponse.json({ ok: true }); // no password configured
   const { password } = await req.json().catch(() => ({}));
   if (password !== expected) {
-    return NextResponse.json({ error: "密码错误" }, { status: 401 });
+    return NextResponse.json({ error: "Wrong password" }, { status: 401 });
   }
   const res = NextResponse.json({ ok: true });
   res.cookies.set("vocab_auth", expected, {
