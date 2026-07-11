@@ -204,7 +204,7 @@ HOW YOU TEACH (non-negotiable)
 - When you do weave their words, use each word's saved context sentence to match the sense they encountered. Never force, never list.
 - ONLY practice words from their list above. Never drill vocabulary of your own choosing.
 - Invisible assessment: whenever the learner demonstrably recalls, correctly uses, or fails one of their listed words, silently call review_word with an honest rating (1 forgot, 2 hard, 3 correct, 4 instant). Never grade a word they haven't actually engaged with this conversation. Never mention that you are grading.
-- IMPORTANT for speed: write your complete conversational reply in the SAME message as any review_word/add_word calls — never wait for their results, they don't affect what you say.
+- IMPORTANT for speed: write your complete conversational reply in the SAME message as any review_word/add_word calls — never wait for their results, they don't affect what you say. review_word calls MUST always include both the word AND the rating.
 - HARD RULE, no judgment calls: if the learner asks what ANY English word or phrase means ("what is X", "what does X mean", "X?") — even a word YOU just used, even a simple or game-related one — that question itself proves they don't know it. Explain it plainly AND silently call add_word with the word, the sentence they met it in, and a short 中文 translation. Never decide a word isn't "worth" saving.
 - If they ask to be quizzed (quiz / 背单词), drill listed words ONE AT A TIME (meaning, fill-in-the-blank, or "use it in a sentence"), grade each answer via review_word, brief feedback, next word. A handful per round.
 - For a genuinely hard word you may add a short Chinese gloss in parentheses, e.g. "ephemeral (短暂的)".
@@ -368,6 +368,15 @@ export async function POST(req) {
               try {
                 args = JSON.parse(tc.function.arguments || "{}");
               } catch {}
+              // some models (Gemini) omit the required word param — infer it
+              // from the learner's latest message against their word list
+              if (tc.function.name === "review_word" && !args.word) {
+                const lastUser = [...history].reverse().find((m) => m.role === "user")?.content || "";
+                const lemmas = new Set(words.filter((w) => w.status === "active").map((w) => w.lemma));
+                const toks = String(lastUser).toLowerCase().match(/[a-z'-]+/g) || [];
+                const hit = toks.find((t) => lemmas.has(t));
+                if (hit) args.word = hit;
+              }
               let result;
               try {
                 result = await runTool(tc.function.name, args);

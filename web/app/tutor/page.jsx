@@ -117,11 +117,14 @@ export default function Tutor() {
           }
         }
         if (sawError) setError(sawError);
+        // prune empty assistant bubbles (stream died before any delta arrived)
+        setMessages((ms) => ms.filter((m, i) => !(m.role === "assistant" && !(m.content || "").trim())));
       }
       if (opts.end) setEnded(true);
       await loadWords(true);
     } catch (e) {
       setError(String(e.message || e));
+      setMessages((ms) => ms.filter((m) => !(m.role === "assistant" && !(m.content || "").trim())));
     } finally {
       setBusy(false);
     }
@@ -138,7 +141,7 @@ export default function Tutor() {
         const saved = JSON.parse(raw);
         if (saved.sessionId && Array.isArray(saved.messages) && saved.messages.length) {
           sessionIdRef.current = saved.sessionId;
-          setMessages(saved.messages);
+          setMessages(saved.messages.filter((m) => !(m.role === "assistant" && !(m.content || "").trim())));
           setEnded(!!saved.ended);
           if (saved.mode) setMode(saved.mode);
           restored = true;
