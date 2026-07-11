@@ -47,6 +47,7 @@ function schedule(rec, rating) {
     }
     reps += 1;
     state = "review";
+    interval = Math.min(interval, 3650); // cap at ~10y
     dueMs = now() + interval * DAY;
   }
 

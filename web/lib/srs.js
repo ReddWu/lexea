@@ -36,6 +36,7 @@ export function schedule(rec, rating, nowMs) {
     }
     reps += 1;
     state = "review";
+    interval = Math.min(interval, 3650); // cap at ~10y — repeated test grading exploded this once
     dueMs = now + interval * DAY;
   }
 
