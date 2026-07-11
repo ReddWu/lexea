@@ -41,7 +41,7 @@ function baseCandidates(w) {
   if (w.endsWith("s") && !/(ss|us|is)$/.test(w) && w.length > 3) out.add(w.slice(0, -1));
   // -ing / -ed with un-doubling and e-restoration
   for (const [suf, min] of [["ing", 5], ["ed", 4]]) {
-    if (w.endsWith(suf) && w.length > min) {
+    if (w.endsWith(suf) && w.length >= min) {
       const s = w.slice(0, -suf.length);
       out.add(s); // walk(ing) → walk
       out.add(s + "e"); // mak(ing) → make
@@ -159,6 +159,62 @@ async function deleteCloud(lemma) {
 //   1. dictionaryapi.dev  → phonetic (IPA) + fallback English definition
 //   2. the Mia backend /api/define (Claude) → plain-English explanation + 中文
 // Results are written back onto the stored record (best-effort).
+// --- bundled IPA dictionary (open-dict-data/ipa-dict, 126k words) ----------
+// Local-first phonetics: instant lookup, no network. dictionaryapi.dev stays
+// as async fallback for the words the bundle misses (slang, brand-new coinage).
+let ipaMapPromise = null;
+function ipaMap() {
+  if (!ipaMapPromise) {
+    ipaMapPromise = fetch(chrome.runtime.getURL("ipa-en.json"))
+      .then((r) => r.json())
+      .catch(() => {
+        ipaMapPromise = null; // retry next call instead of caching failure
+        return {};
+      });
+  }
+  return ipaMapPromise;
+}
+
+// ECDICT (skywind3000/ECDICT, 57k common words): instant 中文 gloss + phonetic
+let ecdictPromise = null;
+function ecdict() {
+  if (!ecdictPromise) {
+    ecdictPromise = fetch(chrome.runtime.getURL("ecdict-zh.json"))
+      .then((r) => r.json())
+      .catch(() => {
+        ecdictPromise = null; // retry next call instead of caching failure
+        return {};
+      });
+  }
+  return ecdictPromise;
+}
+
+async function localPhonetic(word) {
+  const map = await ipaMap();
+  const w = (word || "").trim().toLowerCase();
+  for (const cand of [w, ...baseCandidates(w)]) {
+    if (map[cand]) return map[cand];
+  }
+  return null;
+}
+
+// Everything we know about a word without touching the network.
+async function localQuick(word) {
+  const [ipa, zhMap] = await Promise.all([localPhonetic(word), ecdict()]);
+  const w = (word || "").trim().toLowerCase();
+  let entry = null;
+  for (const cand of [w, ...baseCandidates(w)]) {
+    if (zhMap[cand]) {
+      entry = zhMap[cand];
+      break;
+    }
+  }
+  return {
+    phonetic: ipa || (entry && entry[1] ? `/${entry[1]}/` : null),
+    zh: entry ? entry[0] : null,
+  };
+}
+
 async function fetchDictOnce(word) {
   const res = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
@@ -208,11 +264,12 @@ async function fetchDefine(word, context) {
 }
 
 async function defineWord(p) {
-  const [dict, ai] = await Promise.all([fetchDict(p.word), fetchDefine(p.word, p.context)]);
+  // LLM contextual explanation; local layers already gave phonetic + 中文
+  const [quick, ai] = await Promise.all([localQuick(p.word), fetchDefine(p.word, p.context)]);
   const info = {
-    phonetic: dict.phonetic || null,
-    plain: ai.plain || dict.dictDef || null,
-    zh: ai.zh || null,
+    phonetic: quick.phonetic || null,
+    plain: ai.plain || null,
+    zh: ai.zh || quick.zh || null,
   };
   // write back onto the saved record (best-effort; variant-aware)
   const lemma = await resolveLemma(p.word);
@@ -220,7 +277,7 @@ async function defineWord(p) {
   const cur = (await chrome.storage.local.get(k))[k];
   if (cur) {
     if (info.zh && !cur.translation) cur.translation = info.zh;
-    if (info.plain) cur.definition = info.plain;
+    if (info.plain && !cur.definition) cur.definition = info.plain;
     if (info.phonetic) cur.phonetic = info.phonetic;
     cur.updated_at = nowISO();
     await chrome.storage.local.set({ [k]: cur });
@@ -230,6 +287,37 @@ async function defineWord(p) {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // instant local phonetic + 中文 for the capture card (no network),
+  // persisted onto the stored record so review/dashboard get it too
+  if (msg?.type === "phonetic" && msg.payload?.word) {
+    (async () => {
+      const info = await localQuick(msg.payload.word);
+      try {
+        const lemma = await resolveLemma(msg.payload.word);
+        const k = KEY(lemma);
+        const cur = (await chrome.storage.local.get(k))[k];
+        if (cur) {
+          let dirty = false;
+          if (info.zh && !cur.translation) (cur.translation = info.zh), (dirty = true);
+          if (info.phonetic && !cur.phonetic) (cur.phonetic = info.phonetic), (dirty = true);
+          if (dirty) {
+            cur.updated_at = nowISO();
+            await chrome.storage.local.set({ [k]: cur });
+            pushCloud(cur);
+          }
+        }
+      } catch (_e) {}
+      sendResponse({ ok: true, ...info });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+  // network dictionary definition (~1-2s) — interim English def before the LLM
+  if (msg?.type === "dictdef" && msg.payload?.word) {
+    fetchDict(msg.payload.word)
+      .then((d) => sendResponse({ ok: true, ...d }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
   if (msg?.type === "define" && msg.payload?.word) {
     defineWord(msg.payload)
       .then((info) => sendResponse({ ok: true, ...info }))

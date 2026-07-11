@@ -7,7 +7,7 @@ export const runtime = "edge";
 // Runs on the same OpenAI-compatible LLM as the tutor (Butterbase AI gateway
 // by default; see web/lib/llm.js). CORS is open so the browser extension can
 // call this from any page.
-import { llmConfigured } from "../../../lib/llm";
+
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req) {
-  if (!llmConfigured()) return json({ error: "LLM not configured" }, 500);
+  if (!BASE || !KEY) return json({ error: "LLM not configured" }, 500);
   let body;
   try {
     body = await req.json();

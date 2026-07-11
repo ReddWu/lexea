@@ -20,6 +20,8 @@ export default function Tutor() {
   const scrollRef = useRef(null);
   const wordsRef = useRef([]);
   const sessionIdRef = useRef(null);
+  const startedRef = useRef(false);
+  const [ended, setEnded] = useState(false);
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current = "mia-" + crypto.randomUUID().slice(0, 13);
   }
@@ -71,6 +73,7 @@ export default function Tutor() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.status);
       setMessages((ms) => [...ms, { role: "assistant", content: data.reply }]);
+      if (opts.end) setEnded(true);
       await loadWords(true);
     } catch (e) {
       setError(String(e.message || e));
@@ -80,6 +83,8 @@ export default function Tutor() {
   }
 
   useEffect(() => {
+    if (startedRef.current) return; // StrictMode double-invoke guard (dev)
+    startedRef.current = true;
     loadWords(false).then(() => {
       // kick off the session: Mia plans it based on the forgetting curve
       send("Hi Mia, let's start today's session.", { hidden: true });
@@ -118,7 +123,7 @@ export default function Tutor() {
           <div className="head-actions">
             <button
               className="end-btn"
-              disabled={busy || messages.length < 2}
+              disabled={busy || ended || messages.length < 2}
               onClick={() => send("I need to go — let's wrap up for today.", { end: true })}
             >
               End session
@@ -141,11 +146,11 @@ export default function Tutor() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder='Chat in English — or try "quiz me"'
-            disabled={busy}
+            placeholder={ended ? "Session ended — refresh to start a new one" : 'Chat in English — or try "quiz me"'}
+            disabled={busy || ended}
             autoFocus
           />
-          <button className="btn blue" disabled={busy || !input.trim()}>
+          <button className="btn blue" disabled={busy || ended || !input.trim()}>
             Send
           </button>
         </form>

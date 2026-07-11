@@ -28,7 +28,7 @@ export async function POST(req) {
   if (!lemma) return json({ error: "lemma required" }, 400);
 
   // never trust/forward local-only or DB-owned fields
-  const { id, times_used_in_chat, ...body } = rec;
+  const { id, times_used_in_chat, stability, difficulty, ...body } = rec;
   body.lemma = lemma;
 
   try {

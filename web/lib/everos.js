@@ -14,6 +14,7 @@ async function call(path, body, method = "POST") {
     method,
     headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(4000), // memory must never stall a tutoring turn
   });
   if (!res.ok) throw new Error(`everos ${path} ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return (await res.json()).data;

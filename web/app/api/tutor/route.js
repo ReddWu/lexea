@@ -134,7 +134,20 @@ async function runTool(name, args) {
     return { words: JSON.parse(weakWordsBlock(words, args.n || 20)) };
   }
   if (name === "review_word") {
-    const rec = await getWordByLemma(String(args.word || ""));
+    let rec = await getWordByLemma(String(args.word || ""));
+    if (!rec) {
+      // the model may grade a surface/inflected form ("scripts" for "script")
+      const w = String(args.word || "").toLowerCase();
+      const cands = [];
+      if (/ies$/.test(w) && w.length > 4) cands.push(w.slice(0, -3) + "y");
+      if (/s$/.test(w) && !/(ss|us|is)$/.test(w) && w.length > 3) cands.push(w.slice(0, -1));
+      if (/ing$/.test(w) && w.length >= 5) cands.push(w.slice(0, -3), w.slice(0, -3) + "e");
+      if (/ed$/.test(w) && w.length >= 4) cands.push(w.slice(0, -2), w.slice(0, -2) + "e");
+      for (const c of cands) {
+        rec = await getWordByLemma(c);
+        if (rec) break;
+      }
+    }
     if (!rec) return { error: "word not in vocabulary", word: args.word };
     const rating = Math.min(4, Math.max(1, parseInt(args.rating, 10) || 3));
     const patch = schedule(rec, rating);
@@ -162,7 +175,12 @@ async function runTool(name, args) {
       translation: args.translation ? String(args.translation).slice(0, 200) : null,
       source_title: "Mia chat",
       state: "new",
+      status: "active",
       due: t,
+      ease: 2.5,
+      reps: 0,
+      lapses: 0,
+      interval_days: 0,
     });
     return { ok: true, added: true, word };
   }

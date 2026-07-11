@@ -61,8 +61,8 @@ export default function Memory() {
             </p>
           )}
           <ul className="wlist">
-            {data.episodes.map((e) => (
-              <li key={e.id} style={{ padding: "16px 0", borderBottom: "1px solid var(--line)" }}>
+            {data.episodes.map((e, i) => (
+              <li key={e.id || i} style={{ padding: "16px 0", borderBottom: "1px solid var(--line)" }}>
                 <div style={{ font: "700 16px/1.4 var(--serif)", marginBottom: 4 }}>
                   {e.subject || "Session"}
                 </div>

@@ -101,19 +101,50 @@ async function dictLookup(lemma) {
   return null;
 }
 
-async function ensureDef(rec) {
-  if (rec.translation && rec.phonetic) return { def: rec.translation, phon: rec.phonetic };
-  const data = await dictLookup(rec.lemma);
-  let phon = rec.phonetic || null;
-  let text = rec.translation || null;
-  if (data) {
-    if (!phon) {
-      for (const entry of data) {
-        phon = entry.phonetic || (entry.phonetics || []).find((p) => p.text)?.text || null;
-        if (phon) break;
-      }
+const hasCJK = (s) => /[一-鿿]/.test(s || "");
+
+// local dictionaries via the service worker — instant {phonetic, zh}
+function localQuick(word) {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage({ type: "phonetic", payload: { word } }, (res) =>
+        resolve(!chrome.runtime.lastError && res ? res : {})
+      );
+    } catch (_e) {
+      resolve({});
     }
-    if (!text) {
+  });
+}
+
+// Normalize a record into { en, zh, phon } and migrate legacy fields:
+// `definition` = English, `translation` = 中文. Older caches stored English
+// dictionary text in `translation` — move it over.
+async function ensureDef(rec) {
+  let dirty = false;
+  if (rec.translation && !hasCJK(rec.translation)) {
+    if (!rec.definition) rec.definition = rec.translation;
+    rec.translation = null;
+    dirty = true;
+  }
+  let phon = rec.phonetic || null;
+  let zh = rec.translation || null;
+  let en = rec.definition || null;
+
+  if (!phon || !zh) {
+    const q = await localQuick(rec.lemma);
+    if (!phon && q.phonetic) (phon = q.phonetic), (rec.phonetic = phon), (dirty = true);
+    if (!zh && q.zh) (zh = q.zh), (rec.translation = zh), (dirty = true);
+  }
+  if (!en) {
+    const data = await dictLookup(rec.lemma);
+    if (data) {
+      if (!phon) {
+        for (const entry of data) {
+          phon = entry.phonetic || (entry.phonetics || []).find((p) => p.text)?.text || null;
+          if (phon) break;
+        }
+        if (phon) (rec.phonetic = phon), (dirty = true);
+      }
       const out = [];
       for (const entry of data) {
         for (const m of entry.meanings || []) {
@@ -123,15 +154,26 @@ async function ensureDef(rec) {
         }
         if (out.length >= 3) break;
       }
-      if (out.length) text = out.map((o) => (o.pos ? `(${o.pos}) ` : "") + o.def).join("\n");
+      if (out.length) {
+        en = out.map((o) => (o.pos ? `(${o.pos}) ` : "") + o.def).join("\n");
+        rec.definition = en;
+        dirty = true;
+      }
     }
-    // cache whatever we learned
-    let dirty = false;
-    if (text && !rec.translation) (rec.translation = text), (dirty = true);
-    if (phon && !rec.phonetic) (rec.phonetic = phon), (dirty = true);
-    if (dirty) await chrome.storage.local.set({ [KEY(rec.lemma)]: rec });
   }
-  return { def: text, phon };
+  if (dirty) await chrome.storage.local.set({ [KEY(rec.lemma)]: rec });
+  return { en, zh, phon };
+}
+
+// pronounce with the built-in speech engine — instant, offline
+function speak(word) {
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  } catch (_e) {}
 }
 
 // ---- rendering ------------------------------------------------------------
@@ -154,12 +196,25 @@ function renderDone() {
   statsEl.textContent = `Done: ${session.done}`;
 }
 
+const SPEAK_BTN = (w) =>
+  `<button class="speak" data-word="${esc(w)}" title="Pronounce" style="border:none;background:none;font-size:20px;cursor:pointer;vertical-align:middle;">🔊</button>`;
+
+function wirePhonRow(rec) {
+  card.querySelectorAll(".speak").forEach((b) => b.addEventListener("click", () => speak(b.dataset.word)));
+  const phonEl = document.getElementById("phon");
+  if (!phonEl) return;
+  if (rec.phonetic) phonEl.textContent = rec.phonetic;
+  else localQuick(rec.lemma).then((q) => q.phonetic && (phonEl.textContent = q.phonetic));
+}
+
 function renderFront(rec) {
   card.innerHTML = `
-    <div class="word">${esc(rec.word)}</div>
+    <div class="word">${esc(rec.word)} ${SPEAK_BTN(rec.word)}</div>
+    <div class="phon" id="phon" style="text-align:center;color:#6b6b6b;font-size:16px;margin-top:4px;font-family:Charter,Georgia,serif;"></div>
     <div class="src">${rec.source_url ? `<a href="${esc(rec.source_url)}" target="_blank">${esc(rec.source_title || rec.source_url)}</a>` : ""}</div>
     <div class="controls"><button class="reveal" id="reveal">Reveal (space)</button></div>`;
   document.getElementById("reveal").addEventListener("click", () => renderBack(rec));
+  wirePhonRow(rec);
 }
 
 async function renderBack(rec) {
@@ -178,9 +233,13 @@ async function renderBack(rec) {
     : `<div class="ctx" style="color:#9ca3af">(no saved sentence)</div>`;
 
   card.innerHTML = `
-    <div class="word">${esc(rec.word)}</div>
+    <div class="word">${esc(rec.word)} ${SPEAK_BTN(rec.word)}</div>
     <div class="phon" id="phon" style="text-align:center;color:#6b6b6b;font-size:16px;margin-top:4px;font-family:Charter,Georgia,serif;"></div>
     <div class="def" id="def">Looking it up…</div>
+    <div style="margin:4px 0 8px;">
+      <button id="zhBtn" style="font:600 12px/1 -apple-system,system-ui,sans-serif;color:#1a8917;background:#f0f7ef;border:1px solid #cfe6cd;border-radius:99px;padding:5px 10px;cursor:pointer;">中文</button>
+      <div id="zhText" style="display:none;font-size:15px;margin-top:6px;color:#0f172a;"></div>
+    </div>
     <div class="back" style="display:block">
       <div class="ctx-label">Context</div>
       ${ctxHtml}
@@ -196,14 +255,30 @@ async function renderBack(rec) {
     b.addEventListener("click", () => grade(rec, parseInt(b.dataset.g, 10)))
   );
 
-  const { def, phon } = await ensureDef(rec);
+  wirePhonRow(rec);
+  const { en, zh, phon } = await ensureDef(rec);
+  if (current !== rec) return; // user already graded on — don't write onto the next card
   const defEl = document.getElementById("def");
-  if (defEl) defEl.textContent = def || "(no dictionary entry — recall it from the sentence)";
+  if (defEl) defEl.textContent = en || "(no dictionary entry — recall it from the sentence)";
   const phonEl = document.getElementById("phon");
   if (phonEl && phon) phonEl.textContent = phon;
+  const zhBtn = document.getElementById("zhBtn");
+  const zhText = document.getElementById("zhText");
+  if (zhBtn && zhText) {
+    if (!zh) zhBtn.style.display = "none";
+    else
+      zhBtn.addEventListener("click", () => {
+        zhText.textContent = zh;
+        zhText.style.display = "block";
+        zhBtn.style.display = "none";
+      });
+  }
 }
 
+let grading = false;
 async function grade(rec, rating) {
+  if (grading || rec !== current) return; // ignore key auto-repeat / double taps
+  grading = true;
   const patch = schedule(rec, rating);
   Object.assign(rec, patch);
   await saveRec(rec);
@@ -211,7 +286,9 @@ async function grade(rec, rating) {
   if (rating === 1) {
     // requeue near the end of this session
     queue.push(rec);
+    session.total += 1; // keep the "done/total" stats honest
   }
+  grading = false;
   next();
 }
 

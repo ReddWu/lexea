@@ -69,6 +69,7 @@
   const cardZhBtn = card.querySelector(".mia-zh-btn");
   const cardZh = card.querySelector(".mia-zh");
   let cardZhText = null;
+  let cardSeq = 0; // bumped per card; late async responses for older cards bail
 
   cardZhBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -99,6 +100,7 @@
   }
 
   function showCard(x, y, word) {
+    cardSeq++;
     cardWord.textContent = word;
     cardPhon.textContent = "";
     cardPlain.textContent = "Looking it up…";
@@ -147,14 +149,28 @@
     return (hit || text).trim().slice(0, 600);
   }
 
+  // sendMessage throws "Extension context invalidated" from content scripts
+  // that outlive an extension reload — catch it and ask for a page refresh.
+  function sendToMia(msg, cb) {
+    try {
+      chrome.runtime.sendMessage(msg, (res) => {
+        if (chrome.runtime.lastError) {
+          showToast("Mia was updated — refresh this page", true);
+          cb && cb(null);
+          return;
+        }
+        cb && cb(res);
+      });
+    } catch (_e) {
+      showToast("Mia was updated — refresh this page", true);
+      cb && cb(null);
+    }
+  }
+
   function save(payload, cb) {
-    chrome.runtime.sendMessage({ type: "capture", payload }, (res) => {
-      if (chrome.runtime.lastError) {
-        showToast("Save failed: extension not ready", true);
-        return;
-      }
+    sendToMia({ type: "capture", payload }, (res) => {
       if (res && res.ok) cb && cb();
-      else showToast("Save failed: " + (res?.error || "unknown error"), true);
+      else if (res) showToast("Save failed: " + (res.error || "unknown error"), true);
     });
   }
 
@@ -214,17 +230,48 @@
 
     save(payload, () => {
       showCard(x, y, word);
-      // fetch phonetic + plain definition + 中文 (background does the network)
-      chrome.runtime.sendMessage({ type: "define", payload }, (res) => {
-        if (chrome.runtime.lastError || !res || !res.ok) {
-          cardPlain.textContent = "Saved. (definition unavailable)";
-          cardPlain.className = "mia-plain";
-          return;
-        }
-        if (res.phonetic) cardPhon.textContent = res.phonetic;
-        cardPlain.textContent = res.plain || "Saved.";
+      const seq = cardSeq; // guard: ignore responses that outlive this card
+      const stale = () => seq !== cardSeq;
+      let dictMissed = false; // set when the bundled dictionary has no 中文
+      const setPlain = (text) => {
+        cardPlain.textContent = text;
         cardPlain.className = "mia-plain";
-        cardZhText = res.zh || null;
+      };
+      // stage 1 (~0ms): bundled dictionaries — phonetic + 中文, instantly.
+      // If they cover the word, that's it: no LLM call at all.
+      sendToMia({ type: "phonetic", payload }, (res) => {
+        if (stale()) return;
+        if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
+        if (res && res.zh) {
+          cardZhText = res.zh;
+        } else {
+          dictMissed = true;
+          // rare miss (slang, names): ask the LLM for a contextual explanation + 中文
+          sendToMia({ type: "define", payload }, (llm) => {
+            if (stale()) return;
+            if (!llm || !llm.ok || !llm.plain) {
+              if (cardPlain.className.includes("loading")) setPlain("Saved.");
+              return;
+            }
+            if (llm.phonetic && !cardPhon.textContent) cardPhon.textContent = llm.phonetic;
+            setPlain(llm.plain);
+            if (llm.zh) {
+              cardZhText = llm.zh;
+              if (cardZh.style.display === "block") cardZh.textContent = llm.zh;
+            }
+          });
+        }
+      });
+      // stage 2 (~1-2s): online dictionary English definition for the plain area
+      sendToMia({ type: "dictdef", payload }, (res) => {
+        if (stale()) return;
+        if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
+        if (res && res.dictDef) {
+          if (cardPlain.className.includes("loading")) setPlain(res.dictDef);
+        } else if (!dictMissed && cardPlain.className.includes("loading")) {
+          // dictionary hit for 中文 but no English def online — done anyway
+          setPlain("Saved.");
+        }
       });
     });
   });

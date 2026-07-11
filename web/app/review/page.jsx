@@ -13,6 +13,8 @@ export default function Review() {
   const [revealed, setRevealed] = useState(false);
   const [def, setDef] = useState("Looking it up…");
   const [phon, setPhon] = useState("");
+  const [zh, setZh] = useState("");
+  const [zhShown, setZhShown] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -37,13 +39,24 @@ export default function Review() {
 
   const current = queue && queue[0];
 
+  // phonetic shows on the card front, before reveal
+  useEffect(() => {
+    setPhon(current?.phonetic || "");
+  }, [current]);
+
   const reveal = useCallback(async () => {
     if (!current) return;
+    const revealLemma = current.lemma; // guard: bail if user grades on before fetch lands
+    const fresh = () => queue && queue[0] && queue[0].lemma === revealLemma;
     setRevealed(true);
     setPhon(current.phonetic || "");
-    const hasTranslation = Boolean(current.translation);
-    setDef(hasTranslation ? current.translation : "Looking it up…");
-    if (hasTranslation && current.phonetic) return; // nothing left to look up
+    // definition = English; translation = 中文 (legacy rows stored English there)
+    const isZh = hasCJK(current.translation);
+    setZh(isZh ? current.translation : "");
+    const enStored = current.definition || (!isZh ? current.translation : "");
+    const hasEn = Boolean(enStored);
+    setDef(hasEn ? enStored : "Looking it up…");
+    if (hasEn && current.phonetic) return; // nothing left to look up
     const noEntry = "(no dictionary entry — recall it from the sentence)";
     try {
       const lookup = (lemma) =>
@@ -54,7 +67,7 @@ export default function Review() {
         if (base) r = await lookup(base);
       }
       if (!r.ok) {
-        if (!hasTranslation) setDef(noEntry);
+        if (!hasEn && fresh()) setDef(noEntry);
         return;
       }
       const data = await r.json();
@@ -62,7 +75,7 @@ export default function Review() {
         const entry = (data || []).find((e) => e.phonetic || e.phonetics?.find((p) => p.text));
         const text = entry ? entry.phonetic || entry.phonetics?.find((p) => p.text)?.text : "";
         if (text) {
-          setPhon(text);
+          if (fresh()) setPhon(text);
           fetch("/api/words", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -70,7 +83,7 @@ export default function Review() {
           }).catch(() => {});
         }
       }
-      if (!hasTranslation) {
+      if (!hasEn) {
         const out = [];
         for (const entry of data) {
           for (const m of entry.meanings || []) {
@@ -80,12 +93,12 @@ export default function Review() {
           }
           if (out.length >= 3) break;
         }
-        setDef(out.length ? out.join("\n") : noEntry);
+        if (fresh()) setDef(out.length ? out.join("\n") : noEntry);
       }
     } catch {
-      if (!hasTranslation) setDef(noEntry);
+      if (!hasEn && fresh()) setDef(noEntry);
     }
-  }, [current]);
+  }, [current, queue]);
 
   const grade = useCallback(
     (rating) => {
@@ -99,12 +112,17 @@ export default function Review() {
       setDone((d) => d + 1);
       setQueue((q) => {
         const rest = q.slice(1);
-        if (rating === 1) rest.push({ ...current, ...patch }); // "again" returns this session
+        if (rating === 1) {
+          rest.push({ ...current, ...patch }); // "again" returns this session
+          setTotal((t) => t + 1); // keep done/total honest
+        }
         return rest;
       });
       setRevealed(false);
       setDef("Looking it up…");
       setPhon("");
+      setZh("");
+      setZhShown(false);
     },
     [current]
   );
@@ -151,7 +169,7 @@ export default function Review() {
               </div>
             )
           ) : (
-            <Card card={current} revealed={revealed} def={def} phon={phon} onReveal={reveal} onGrade={grade} />
+            <Card card={current} revealed={revealed} def={def} phon={phon} zh={zh} zhShown={zhShown} onShowZh={() => setZhShown(true)} onReveal={reveal} onGrade={grade} />
           )}
         </div>
       </div>
@@ -160,13 +178,27 @@ export default function Review() {
   );
 }
 
-function Card({ card, revealed, def, phon, onReveal, onGrade }) {
+function Card({ card, revealed, def, phon, zh, zhShown, onShowZh, onReveal, onGrade }) {
   const contexts = (card.contexts && card.contexts.length ? card.contexts : card.context ? [{ sentence: card.context }] : [])
     .slice(-4)
     .reverse();
   return (
     <>
-      <div className="word">{card.word}</div>
+      <div className="word">
+        {card.word}{" "}
+        <button
+          onClick={() => speak(card.word)}
+          title="Pronounce"
+          style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", verticalAlign: "middle" }}
+        >
+          🔊
+        </button>
+      </div>
+      {phon ? (
+        <div style={{ color: "var(--muted)", fontSize: 16, textAlign: "center", marginTop: 4, fontFamily: "var(--serif)" }}>
+          {phon}
+        </div>
+      ) : null}
       <div className="src">
         {card.source_url ? (
           <a href={card.source_url} target="_blank" rel="noreferrer">
@@ -183,15 +215,19 @@ function Card({ card, revealed, def, phon, onReveal, onGrade }) {
         </div>
       ) : (
         <>
-          {phon ? (
-            <div
-              className="phon"
-              style={{ color: "var(--muted)", fontSize: 16, textAlign: "center", marginTop: 4, fontFamily: "var(--serif)" }}
-            >
-              {phon}
-            </div>
-          ) : null}
           <div className="def">{def}</div>
+          {zh ? (
+            zhShown ? (
+              <div style={{ fontSize: 16, margin: "2px 0 10px", color: "#0f172a" }}>{zh}</div>
+            ) : (
+              <button
+                onClick={onShowZh}
+                style={{ font: "600 12px/1 var(--sans)", color: "var(--green)", background: "#f0f7ef", border: "1px solid #cfe6cd", borderRadius: 99, padding: "5px 10px", cursor: "pointer", marginBottom: 10 }}
+              >
+                中文
+              </button>
+            )
+          ) : null}
           <div className="ctx-label">Context</div>
           {contexts.length ? (
             contexts.map((c, i) => (
@@ -223,6 +259,18 @@ function Card({ card, revealed, def, phon, onReveal, onGrade }) {
       )}
     </>
   );
+}
+
+const hasCJK = (s) => /[一-鿿]/.test(s || "");
+
+function speak(word) {
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  } catch (_e) {}
 }
 
 // conservative base-form guess for dictionary retry: "subpoenas" → "subpoena"
