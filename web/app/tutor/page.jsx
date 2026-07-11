@@ -22,6 +22,7 @@ export default function Tutor() {
   const sessionIdRef = useRef(null);
   const startedRef = useRef(false);
   const [ended, setEnded] = useState(false);
+  const [mode, setMode] = useState("companion"); // "companion" | "study"
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current = "mia-" + crypto.randomUUID().slice(0, 13);
   }
@@ -68,6 +69,7 @@ export default function Tutor() {
           messages: history.map(({ role, content }) => ({ role, content })),
           end: !!opts.end,
           session_id: sessionIdRef.current,
+          mode,
         }),
       });
       const ctype = res.headers.get("content-type") || "";
@@ -138,6 +140,7 @@ export default function Tutor() {
           sessionIdRef.current = saved.sessionId;
           setMessages(saved.messages);
           setEnded(!!saved.ended);
+          if (saved.mode) setMode(saved.mode);
           restored = true;
         }
       }
@@ -157,10 +160,10 @@ export default function Tutor() {
     try {
       localStorage.setItem(
         "mia-chat-v1",
-        JSON.stringify({ sessionId: sessionIdRef.current, messages, ended })
+        JSON.stringify({ sessionId: sessionIdRef.current, messages, ended, mode })
       );
     } catch (_e) {}
-  }, [messages, ended]);
+  }, [messages, ended, mode]);
 
   function newSession() {
     try {
@@ -251,6 +254,24 @@ export default function Tutor() {
             <b>Mia</b> <span className="sub">your vocabulary mentor · {dueCount} words due</span>
           </div>
           <div className="head-actions">
+            <div className="mode-toggle">
+              <button
+                className={mode === "companion" ? "on" : ""}
+                disabled={busy}
+                onClick={() => setMode("companion")}
+                title="Just chat — words come up naturally"
+              >
+                💬 Chat
+              </button>
+              <button
+                className={mode === "study" ? "on" : ""}
+                disabled={busy}
+                onClick={() => setMode("study")}
+                title="Word practice: weaving, quizzes, streaks"
+              >
+                📚 Focus
+              </button>
+            </div>
             <button className="end-btn" disabled={busy} onClick={newSession}>
               New session
             </button>
@@ -282,7 +303,7 @@ export default function Tutor() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={ended ? "Session ended — hit New session when ready" : 'Chat in English — or try "quiz me"'}
+            placeholder={ended ? "Session ended — hit New session when ready" : mode === "companion" ? "Talk about anything — Mia's listening" : 'Word practice — or try "quiz me"'}
             disabled={busy || ended}
             autoFocus
           />
@@ -373,6 +394,27 @@ export default function Tutor() {
           color: var(--muted);
           font-size: 12px;
           font-weight: 400;
+        }
+        .mode-toggle {
+          display: flex;
+          border: 1px solid var(--line-strong);
+          border-radius: 99px;
+          overflow: hidden;
+        }
+        .mode-toggle button {
+          font: 600 12px/1 var(--sans);
+          border: none;
+          background: #fff;
+          color: var(--muted);
+          padding: 6px 10px;
+          cursor: pointer;
+        }
+        .mode-toggle button.on {
+          background: var(--green);
+          color: #fff;
+        }
+        .mode-toggle button:disabled {
+          opacity: 0.5;
         }
         .head-actions {
           display: flex;
