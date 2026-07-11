@@ -30,13 +30,26 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// words change slowly mid-conversation — a short cache saves ~0.5s per turn.
+// Busted whenever a tool writes.
+let wordsCache = { at: 0, data: null };
+async function cachedWords() {
+  if (wordsCache.data && Date.now() - wordsCache.at < 15000) return wordsCache.data;
+  const data = await listWords();
+  wordsCache = { at: Date.now(), data };
+  return data;
+}
+function bustWords() {
+  wordsCache.at = 0;
+}
+
 const TOOLS = [
   {
     type: "function",
     function: {
       name: "review_word",
       description:
-        "Record how well the learner just recalled/used one of THEIR OWN saved words, updating their spaced-repetition schedule. Call silently whenever the learner demonstrably remembers, uses, or fails one of their words in conversation or a quiz. rating: 1=forgot/wrong, 2=hard/hesitant, 3=correct, 4=instant/easy. Only for words that came from get_weak_words / the weak-word list.",
+        "Record how well the learner just recalled/used one of THEIR OWN saved words, updating their spaced-repetition schedule. Call silently whenever the learner demonstrably remembers, uses, or fails one of their words in conversation or a quiz. rating: 1=forgot/wrong, 2=hard/hesitant, 3=correct, 4=instant/easy. Any word on the learner's FULL word list qualifies.",
       parameters: {
         type: "object",
         properties: {
@@ -79,7 +92,7 @@ const TOOLS = [
   },
 ];
 
-function weakWordsBlock(words, n = 20) {
+function weakWordsBlock(words, n = 14) {
   const now = Date.now();
   const ranked = words
     .filter((w) => w.status === "active")
@@ -88,10 +101,9 @@ function weakWordsBlock(words, n = 20) {
     .slice(0, n)
     .map(({ w }) => ({
       word: w.word,
-      context: w.context || undefined,
+      context: w.context ? String(w.context).slice(0, 120) : undefined,
       reps: w.reps,
       lapses: w.lapses,
-      due: w.due,
       state: w.state,
     }));
   return JSON.stringify(ranked);
@@ -119,6 +131,10 @@ function systemPrompt(words, profile, everosMemory, hook) {
   return `You are Mia — an English conversation partner and vocabulary mentor for a Chinese learner who saves words while reading real articles. Their word list drives everything you do.
 
 Their current weakest words, ranked weakest-first (JSON): ${weakWordsBlock(words)}
+Their FULL word list (any of these can be graded with review_word, even when not detailed above): ${words
+    .filter((w) => w.status === "active")
+    .map((w) => w.word)
+    .join(", ")}
 Words due for review right now: ${due}.
 ${memory}
 
@@ -160,7 +176,8 @@ HOW YOU TEACH (non-negotiable)
 - Weave their weak words (weakest first) naturally into fluent replies — a few per reply, never forced, never listed. Use each word's saved context sentence to match the sense they encountered.
 - ONLY practice words from their list above. Never drill vocabulary of your own choosing.
 - Invisible assessment: whenever the learner demonstrably recalls, correctly uses, or fails one of their listed words, silently call review_word with an honest rating (1 forgot, 2 hard, 3 correct, 4 instant). Never grade a word they haven't actually engaged with this conversation. Never mention that you are grading.
-- When they ask about a new word, explain it simply, then silently call add_word.
+- IMPORTANT for speed: write your complete conversational reply in the SAME message as any review_word/add_word calls — never wait for their results, they don't affect what you say.
+- HARD RULE, no judgment calls: if the learner asks what ANY English word or phrase means ("what is X", "what does X mean", "X?") — even a word YOU just used, even a simple or game-related one — that question itself proves they don't know it. Explain it plainly AND silently call add_word with the word, the sentence they met it in, and a short 中文 translation. Never decide a word isn't "worth" saving.
 - If they ask to be quizzed (quiz / 背单词), drill listed words ONE AT A TIME (meaning, fill-in-the-blank, or "use it in a sentence"), grade each answer via review_word, brief feedback, next word. A handful per round.
 - For a genuinely hard word you may add a short Chinese gloss in parentheses, e.g. "ephemeral (短暂的)".
 - Reply in English (immersion). Keep replies conversational and short — two to four sentences unless the learner wants depth.
@@ -191,6 +208,7 @@ async function runTool(name, args) {
     const rating = Math.min(4, Math.max(1, parseInt(args.rating, 10) || 3));
     const patch = schedule(rec, rating);
     await patchWord(rec.lemma, patch);
+    bustWords();
     return { ok: true, word: rec.word, rating, due: patch.due, interval_days: patch.interval_days, state: patch.state };
   }
   if (name === "add_word") {
@@ -221,6 +239,7 @@ async function runTool(name, args) {
       lapses: 0,
       interval_days: 0,
     });
+    bustWords();
     return { ok: true, added: true, word };
   }
   return { error: `unknown tool ${name}` };
@@ -271,7 +290,7 @@ export async function POST(req) {
   let words, profile, everosMemory;
   try {
     [words, profile, everosMemory] = await Promise.all([
-      listWords(),
+      cachedWords(),
       needMemory ? getProfile().catch(() => null) : null,
       needMemory && everosConfigured()
         ? recall("learner profile, interests, recurring mistakes, recent tutoring progress")
@@ -330,6 +349,11 @@ export async function POST(req) {
               toolEvents.push(ev);
               emit({ type: "tool", event: ev }); // panel can flash immediately
               messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
+            }
+            const needsResults = msg.tool_calls.some((tc) => tc.function.name === "get_weak_words");
+            if (!needsResults && typeof msg.content === "string" && msg.content.trim()) {
+              finished = true; // reply already written; grading is fire-and-forget
+              break;
             }
             continue;
           }
