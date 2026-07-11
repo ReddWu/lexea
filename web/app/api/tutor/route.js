@@ -30,6 +30,26 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// deterministic safety net: "what is X?" style questions ALWAYS save the word,
+// even when the model forgets to call add_word (prompt rules are probabilistic)
+const ASK_RE = /what(?:'s| is| does| do you mean by)\s+["'\u201c]?([A-Za-z][A-Za-z'-]{1,29})["'\u201d]?\s*(?:mean|refer to)?\s*[?？.!]*\s*$/i;
+const ASK_STOP = new Set([
+  "that","this","it","the","a","an","is","are","was","you","your","yours","me","mean",
+  "next","now","up","word","one","they","them","he","she","we","i","then","there","here",
+]);
+function askedWord(text) {
+  const m = String(text || "").trim().match(ASK_RE);
+  if (!m) return null;
+  const w = m[1];
+  if (ASK_STOP.has(w.toLowerCase())) return null;
+  return w;
+}
+function sentenceWith(text, word) {
+  const re = new RegExp("[^.!?]*\\b" + word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b[^.!?]*[.!?]?", "i");
+  const m = String(text || "").replace(/\*\*/g, "").match(re);
+  return m ? m[0].trim().slice(0, 300) : null;
+}
+
 // words change slowly mid-conversation — a short cache saves ~0.5s per turn.
 // Busted whenever a tool writes.
 let wordsCache = { at: 0, data: null };
@@ -367,6 +387,23 @@ export async function POST(req) {
             continue;
           }
           finished = true;
+        }
+        // safety net: the learner explicitly asked about a word this turn
+        const asked = askedWord([...history].reverse().find((m) => m.role === "user")?.content);
+        if (asked && !toolEvents.some((ev) => ev.tool === "add_word")) {
+          try {
+            const prevAssistant = [...history].reverse().find((m) => m.role === "assistant")?.content;
+            const ctx =
+              sentenceWith(prevAssistant, asked) ||
+              sentenceWith(textParts.join(" "), asked) ||
+              null;
+            const result = await runTool("add_word", { word: asked, context: ctx || undefined });
+            if (result && result.ok) {
+              const ev = { tool: "add_word", args: { word: asked, context: ctx }, result };
+              toolEvents.push(ev);
+              emit({ type: "tool", event: ev });
+            }
+          } catch (_e) {}
         }
         const reply = finished ? textParts.join("\n\n") || "…" : "(Mia got stuck in a tool loop — try again)";
         // memory writes are best-effort and must not delay the visible reply
