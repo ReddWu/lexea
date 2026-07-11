@@ -134,6 +134,55 @@ export default function Tutor() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
+  // --- target-word highlighting: Mia's uses of YOUR words turn green ------
+  const [pop, setPop] = useState(null); // {rec, x, y}
+  const wordIndex = {};
+  for (const w of words) {
+    if (w.status && w.status !== "active") continue;
+    const forms = new Set([w.lemma, (w.word || "").toLowerCase()]);
+    const l = w.lemma;
+    if (l && /^[a-z'-]+$/.test(l)) {
+      forms.add(l + "s");
+      forms.add(l + "es");
+      forms.add(l + "ed");
+      forms.add(l + "d");
+      forms.add(l + "ing");
+      if (l.endsWith("e")) forms.add(l.slice(0, -1) + "ing");
+      if (l.endsWith("y")) forms.add(l.slice(0, -1) + "ies");
+    }
+    for (const f of forms) if (f) wordIndex[f] = w;
+  }
+
+  function renderWithHighlights(text, msgKey) {
+    const parts = String(text).split(/([A-Za-z'’-]+)/);
+    return parts.map((tok, j) => {
+      const rec = wordIndex[tok.toLowerCase()];
+      if (!rec) return tok;
+      return (
+        <span
+          key={`${msgKey}-${j}`}
+          className="tw"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPop({ rec, x: e.clientX, y: e.clientY });
+          }}
+        >
+          {tok}
+        </span>
+      );
+    });
+  }
+
+  function speakWord(word) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = "en-US";
+      u.rate = 0.9;
+      speechSynthesis.speak(u);
+    } catch (_e) {}
+  }
+
   const now = Date.now();
   const ranked = words
     .filter((w) => w.status === "active")
@@ -177,7 +226,7 @@ export default function Tutor() {
             .filter((m) => !m.hidden)
             .map((m, i) => (
               <div key={i} className={`msg ${m.role}`}>
-                {m.content}
+                {m.role === "assistant" ? renderWithHighlights(m.content, i) : m.content}
               </div>
             ))}
           {busy && <div className="msg assistant typing">…</div>}
@@ -219,6 +268,28 @@ export default function Tutor() {
           </div>
         ))}
       </div>
+
+      {pop && (
+        <>
+          <div className="pop-backdrop" onClick={() => setPop(null)} />
+          <div
+            className="word-pop"
+            style={{
+              left: Math.min(pop.x, typeof window !== "undefined" ? window.innerWidth - 260 : pop.x),
+              top: pop.y + 12,
+            }}
+          >
+            <div className="wp-head">
+              <b>{pop.rec.word}</b>
+              <button className="wp-speak" onClick={() => speakWord(pop.rec.word)} title="Pronounce">
+                🔊
+              </button>
+            </div>
+            {pop.rec.phonetic && <div className="wp-phon">{pop.rec.phonetic}</div>}
+            <div className="wp-zh">{pop.rec.translation || pop.rec.definition || "(no translation saved yet)"}</div>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .panel-box {
@@ -302,6 +373,55 @@ export default function Tutor() {
           align-self: flex-start;
           background: #f7f7f5;
           border-bottom-left-radius: 4px;
+        }
+        .msg.assistant :global(.tw) {
+          color: var(--green);
+          font-weight: 600;
+          cursor: pointer;
+          border-bottom: 1px dotted var(--green);
+        }
+        .msg.assistant :global(.tw:hover) {
+          background: #eaf6e9;
+          border-radius: 3px;
+        }
+        .pop-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 30;
+        }
+        .word-pop {
+          position: fixed;
+          z-index: 31;
+          width: 240px;
+          background: #fff;
+          border: 1px solid var(--line-strong);
+          border-radius: 10px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+          padding: 12px 14px;
+        }
+        .wp-head {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .wp-head b {
+          font: 700 16px/1.2 var(--serif);
+        }
+        .wp-speak {
+          border: none;
+          background: none;
+          font-size: 16px;
+          cursor: pointer;
+        }
+        .wp-phon {
+          color: var(--muted);
+          font: 14px/1.4 var(--serif);
+          margin-top: 2px;
+        }
+        .wp-zh {
+          font-size: 14px;
+          margin-top: 6px;
+          color: #0f172a;
         }
         .msg.err {
           align-self: center;
