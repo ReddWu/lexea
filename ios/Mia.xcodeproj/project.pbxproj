@@ -14,6 +14,7 @@
 		4EFBC62AD55AC41DB9F27CF5 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E68DFC81E868324AD2F84C /* Reminders.swift */; };
 		543D6AB9C124DED3D1A0E41D /* Lemma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F702AF913809E47250604A /* Lemma.swift */; };
 		5AC42630B0518C24B01E14E1 /* SRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82F6312076725BBB4C21DBF /* SRS.swift */; };
+		601DDAD3B0E380EA1B5D4652 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C3AB191DFA54B58F09DBE0 /* Speech.swift */; };
 		60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
 		61568EEF4D67A136AC23A8E3 /* Backend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A577DE235E0D905EEF7C458 /* Backend.swift */; };
 		619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */; };
@@ -37,6 +38,7 @@
 		C8451C51D251748D2E1BF8DC /* WordRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */; };
 		CD2EFFF15EC114D42D937E05 /* MiaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5D71A6DA599602CBC08388D7 /* MiaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE2C68CA229564F8715F4B9C /* WordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 017633584A7ED842884D8910 /* WordStore.swift */; };
+		E14D08636012936F10C745F7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CEFE3746C1F77EBD50B876 /* Assets.xcassets */; };
 		E1DF753E692A61058BC90543 /* PortParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */; };
 		F4D8C92885530E9A0ED70FFF /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3F3A1CB5D3062111B5E4FB /* ShareViewController.swift */; };
 /* End PBXBuildFile section */
@@ -77,6 +79,7 @@
 		2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		30F702AF913809E47250604A /* Lemma.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lemma.swift; sourceTree = "<group>"; };
+		33CEFE3746C1F77EBD50B876 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3BE945F66B48FCBC5DBB65EF /* RemindersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersTests.swift; sourceTree = "<group>"; };
 		5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordRecord.swift; sourceTree = "<group>"; };
 		5D181BF69E0F58651B9BBD89 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
@@ -94,6 +97,7 @@
 		CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortParityTests.swift; sourceTree = "<group>"; };
 		E5E68DFC81E868324AD2F84C /* Reminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminders.swift; sourceTree = "<group>"; };
 		E82F6312076725BBB4C21DBF /* SRS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRS.swift; sourceTree = "<group>"; };
+		F1C3AB191DFA54B58F09DBE0 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,6 +179,7 @@
 		B5483E051D1787633491DCA3 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				33CEFE3746C1F77EBD50B876 /* Assets.xcassets */,
 				7A577DE235E0D905EEF7C458 /* Backend.swift */,
 				BB63F95A2B4243A7E7C10917 /* Definitions.swift */,
 				0C16FCB44464CC4699EE2E3B /* Info.plist */,
@@ -182,6 +187,7 @@
 				AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */,
 				A22D2635D341A1376DEF7BEF /* MiaApp.swift */,
 				AA905CCEB71E247A16463CFA /* SessionStore.swift */,
+				F1C3AB191DFA54B58F09DBE0 /* Speech.swift */,
 				2BFD1B69C615C0DC2ACA8253 /* TutorStore.swift */,
 				017633584A7ED842884D8910 /* WordStore.swift */,
 				6B22B96C295000B236168C95 /* Views */,
@@ -206,6 +212,7 @@
 			buildConfigurationList = FDF89F071289D0ABE2E5BD10 /* Build configuration list for PBXNativeTarget "Mia" */;
 			buildPhases = (
 				85107CA02EADCC51E9E704F7 /* Sources */,
+				4E47FC69A4E1BF333EB71586 /* Resources */,
 				B3CF5F914DE07373FC168FBC /* Frameworks */,
 				B706CD1754BFB6A34C3CFC12 /* Embed Foundation Extensions */,
 			);
@@ -303,6 +310,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		4E47FC69A4E1BF333EB71586 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E14D08636012936F10C745F7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		66E7DE61529527B9F445FEDC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -333,6 +351,7 @@
 				5AC42630B0518C24B01E14E1 /* SRS.swift in Sources */,
 				8C043C2716C2CDA78FEF30FF /* SessionStore.swift in Sources */,
 				C30A2147622AC3F850D48463 /* SettingsView.swift in Sources */,
+				601DDAD3B0E380EA1B5D4652 /* Speech.swift in Sources */,
 				A4E319C55504724CE24F84E7 /* TutorStore.swift in Sources */,
 				BAEBA742330C5DE872A5093E /* TutorView.swift in Sources */,
 				972F8ACE614D0D648B6A8714 /* WordRecord.swift in Sources */,

@@ -46,6 +46,8 @@ targets:
         InsForgeURL: $(INSFORGE_URL)
         InsForgeAnonKey: $(INSFORGE_ANON_KEY)
         MiaWebURL: $(MIA_WEB_URL)
+        # only standard HTTPS — exempt; skips the export-compliance prompt on every upload
+        ITSAppUsesNonExemptEncryption: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.reddwu.mia

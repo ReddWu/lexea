@@ -72,7 +72,10 @@ struct ReviewView: View {
                         if w.isNew { Text("new").font(.caption).foregroundStyle(.indigo) }
                         Spacer()
                     }
-                    Text(w.word).font(.system(size: 40, weight: .semibold, design: .serif))
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text(w.word).font(.system(size: 40, weight: .semibold, design: .serif))
+                        SpeakButton(text: w.word, lang: w.lang).font(.title2)
+                    }
                     if let p = w.phonetic { Text(p).foregroundStyle(.secondary) }
 
                     if revealed {

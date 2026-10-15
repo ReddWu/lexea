@@ -31,6 +31,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>InsForgeAnonKey</key>
 	<string>$(INSFORGE_ANON_KEY)</string>
 	<key>InsForgeURL</key>

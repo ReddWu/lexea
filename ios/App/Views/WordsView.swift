@@ -98,7 +98,10 @@ struct WordDetailView: View {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(w.word).font(.system(size: 34, weight: .semibold, design: .serif))
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text(w.word).font(.system(size: 34, weight: .semibold, design: .serif))
+                            SpeakButton(text: w.word, lang: w.lang).font(.title3)
+                        }
                         if let p = w.phonetic { Text(p).foregroundStyle(.secondary) }
                         if let g = w.englishGloss { Text(g) }
                         if let z = w.chineseGloss { Text(z).foregroundStyle(.secondary) }
