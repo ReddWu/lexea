@@ -1,0 +1,98 @@
+name: Mia
+options:
+  bundleIdPrefix: com.reddwu
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Secrets.xcconfig
+  Release: Config/Secrets.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Set your team in Xcode (Signing & Capabilities) to run on a device.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+packages:
+  InsForge:
+    url: https://github.com/insforge/insforge-swift.git
+    exactVersion: 0.0.9
+targets:
+  Mia:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    dependencies:
+      - package: InsForge
+      - target: MiaShare
+    entitlements:
+      path: App/Mia.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.reddwu.mia
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Mia
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.reddwu.mia.auth
+            CFBundleURLSchemes: [mia]
+        InsForgeURL: $(INSFORGE_URL)
+        InsForgeAnonKey: $(INSFORGE_ANON_KEY)
+        MiaWebURL: $(MIA_WEB_URL)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reddwu.mia
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: Mia
+  MiaShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ShareExtension
+      - path: Shared
+        excludes: []
+    entitlements:
+      path: ShareExtension/MiaShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.reddwu.mia
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Save to Mia
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reddwu.mia.share
+  MiaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reddwu.mia.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Mia:
+    build:
+      targets:
+        Mia: all
+        MiaShare: all
+    test:
+      targets:
+        - MiaTests

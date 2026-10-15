@@ -1,0 +1,659 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		007A078E981CB5E3F465F2E3 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E68DFC81E868324AD2F84C /* Reminders.swift */; };
+		2BB0E06D07CDFB23F7EA5C79 /* WordRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */; };
+		332F7DF7FAF2E9939C71A1AA /* SRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82F6312076725BBB4C21DBF /* SRS.swift */; };
+		3E54CF0576210C8460893A73 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
+		4EFBC62AD55AC41DB9F27CF5 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E68DFC81E868324AD2F84C /* Reminders.swift */; };
+		543D6AB9C124DED3D1A0E41D /* Lemma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F702AF913809E47250604A /* Lemma.swift */; };
+		5AC42630B0518C24B01E14E1 /* SRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82F6312076725BBB4C21DBF /* SRS.swift */; };
+		60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
+		61568EEF4D67A136AC23A8E3 /* Backend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A577DE235E0D905EEF7C458 /* Backend.swift */; };
+		619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */; };
+		6EEE46C89F4D305F3CC28956 /* Definitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB63F95A2B4243A7E7C10917 /* Definitions.swift */; };
+		83E90B1F57EFDF91483D7D5A /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C01D2B5B0B9B15F9310DC59 /* LoginView.swift */; };
+		86389984E21BD63A334CC9C2 /* MiaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22D2635D341A1376DEF7BEF /* MiaApp.swift */; };
+		87A8BC52FFE0EB5423C2346E /* WordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C305D87DEC1C48F5C5E677 /* WordsView.swift */; };
+		8C043C2716C2CDA78FEF30FF /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA905CCEB71E247A16463CFA /* SessionStore.swift */; };
+		972F8ACE614D0D648B6A8714 /* WordRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */; };
+		9CE84C314917403B78FB2CE0 /* SRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82F6312076725BBB4C21DBF /* SRS.swift */; };
+		A207A7233BA3E89DF78BDF06 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E68DFC81E868324AD2F84C /* Reminders.swift */; };
+		A4E319C55504724CE24F84E7 /* TutorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFD1B69C615C0DC2ACA8253 /* TutorStore.swift */; };
+		AC7E92FB7C2F6088FF208271 /* Lemma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F702AF913809E47250604A /* Lemma.swift */; };
+		AD61A18CE96095A1F5934A0E /* RemindersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE945F66B48FCBC5DBB65EF /* RemindersTests.swift */; };
+		B4CB629653CA2A44B6FDAD02 /* Lemma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F702AF913809E47250604A /* Lemma.swift */; };
+		B6D1BE45A48D9AA9D53B4863 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
+		B7B35B5F5A31EA5A795E186A /* InsForge in Frameworks */ = {isa = PBXBuildFile; productRef = 0F067E2E3BE0DAFEDC9F59E7 /* InsForge */; };
+		BAEBA742330C5DE872A5093E /* TutorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */; };
+		BDA888F6E810581A67487A65 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D181BF69E0F58651B9BBD89 /* ReviewView.swift */; };
+		C30A2147622AC3F850D48463 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */; };
+		C8451C51D251748D2E1BF8DC /* WordRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */; };
+		CD2EFFF15EC114D42D937E05 /* MiaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5D71A6DA599602CBC08388D7 /* MiaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CE2C68CA229564F8715F4B9C /* WordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 017633584A7ED842884D8910 /* WordStore.swift */; };
+		E1DF753E692A61058BC90543 /* PortParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */; };
+		F4D8C92885530E9A0ED70FFF /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3F3A1CB5D3062111B5E4FB /* ShareViewController.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D347AF0CA78816D060DDC051 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D6FA7E65798C0983AEF968A2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3727427AF51420C951CC3D58;
+			remoteInfo = MiaShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B706CD1754BFB6A34C3CFC12 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CD2EFFF15EC114D42D937E05 /* MiaShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		017633584A7ED842884D8910 /* WordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordStore.swift; sourceTree = "<group>"; };
+		0311B418AB2CF8E314AAD97C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0C16FCB44464CC4699EE2E3B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1BDEE370A91BA55078665435 /* Mia.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Mia.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C01D2B5B0B9B15F9310DC59 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureQueue.swift; sourceTree = "<group>"; };
+		264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainSessionStorage.swift; sourceTree = "<group>"; };
+		2BFD1B69C615C0DC2ACA8253 /* TutorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStore.swift; sourceTree = "<group>"; };
+		2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		30F702AF913809E47250604A /* Lemma.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lemma.swift; sourceTree = "<group>"; };
+		3BE945F66B48FCBC5DBB65EF /* RemindersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersTests.swift; sourceTree = "<group>"; };
+		5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordRecord.swift; sourceTree = "<group>"; };
+		5D181BF69E0F58651B9BBD89 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
+		5D3F3A1CB5D3062111B5E4FB /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		5D71A6DA599602CBC08388D7 /* MiaShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MiaShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A577DE235E0D905EEF7C458 /* Backend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backend.swift; sourceTree = "<group>"; };
+		86F8B51603664A6E454BE34B /* MiaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MiaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A22D2635D341A1376DEF7BEF /* MiaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiaApp.swift; sourceTree = "<group>"; };
+		A5C305D87DEC1C48F5C5E677 /* WordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordsView.swift; sourceTree = "<group>"; };
+		AA905CCEB71E247A16463CFA /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mia.entitlements; sourceTree = "<group>"; };
+		BB63F95A2B4243A7E7C10917 /* Definitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Definitions.swift; sourceTree = "<group>"; };
+		C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorView.swift; sourceTree = "<group>"; };
+		CA7013D5DB651BA426AF21CD /* MiaShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MiaShare.entitlements; sourceTree = "<group>"; };
+		CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortParityTests.swift; sourceTree = "<group>"; };
+		E5E68DFC81E868324AD2F84C /* Reminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminders.swift; sourceTree = "<group>"; };
+		E82F6312076725BBB4C21DBF /* SRS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRS.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B3CF5F914DE07373FC168FBC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B7B35B5F5A31EA5A795E186A /* InsForge in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1970AFF70544C290978C6472 = {
+			isa = PBXGroup;
+			children = (
+				B5483E051D1787633491DCA3 /* App */,
+				ADCEB221BF5666B64EBCD56C /* Config */,
+				5C27C4D71BAA7370073DCB83 /* Shared */,
+				383397B4DF40B8F8279CCD2D /* ShareExtension */,
+				F8CCE815692AA2BE1740EE39 /* Tests */,
+				2F2E7D419B4EC63D857119FC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2F2E7D419B4EC63D857119FC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1BDEE370A91BA55078665435 /* Mia.app */,
+				5D71A6DA599602CBC08388D7 /* MiaShare.appex */,
+				86F8B51603664A6E454BE34B /* MiaTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		383397B4DF40B8F8279CCD2D /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				0311B418AB2CF8E314AAD97C /* Info.plist */,
+				CA7013D5DB651BA426AF21CD /* MiaShare.entitlements */,
+				5D3F3A1CB5D3062111B5E4FB /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		5C27C4D71BAA7370073DCB83 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */,
+				30F702AF913809E47250604A /* Lemma.swift */,
+				E5E68DFC81E868324AD2F84C /* Reminders.swift */,
+				E82F6312076725BBB4C21DBF /* SRS.swift */,
+				5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		6B22B96C295000B236168C95 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1C01D2B5B0B9B15F9310DC59 /* LoginView.swift */,
+				5D181BF69E0F58651B9BBD89 /* ReviewView.swift */,
+				30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */,
+				C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */,
+				A5C305D87DEC1C48F5C5E677 /* WordsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		ADCEB221BF5666B64EBCD56C /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		B5483E051D1787633491DCA3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7A577DE235E0D905EEF7C458 /* Backend.swift */,
+				BB63F95A2B4243A7E7C10917 /* Definitions.swift */,
+				0C16FCB44464CC4699EE2E3B /* Info.plist */,
+				264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */,
+				AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */,
+				A22D2635D341A1376DEF7BEF /* MiaApp.swift */,
+				AA905CCEB71E247A16463CFA /* SessionStore.swift */,
+				2BFD1B69C615C0DC2ACA8253 /* TutorStore.swift */,
+				017633584A7ED842884D8910 /* WordStore.swift */,
+				6B22B96C295000B236168C95 /* Views */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F8CCE815692AA2BE1740EE39 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */,
+				3BE945F66B48FCBC5DBB65EF /* RemindersTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		29E7EAAD51AB53209759F930 /* Mia */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FDF89F071289D0ABE2E5BD10 /* Build configuration list for PBXNativeTarget "Mia" */;
+			buildPhases = (
+				85107CA02EADCC51E9E704F7 /* Sources */,
+				B3CF5F914DE07373FC168FBC /* Frameworks */,
+				B706CD1754BFB6A34C3CFC12 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C47A7A0E088AFAD9CFCF0B46 /* PBXTargetDependency */,
+			);
+			name = Mia;
+			packageProductDependencies = (
+				0F067E2E3BE0DAFEDC9F59E7 /* InsForge */,
+			);
+			productName = Mia;
+			productReference = 1BDEE370A91BA55078665435 /* Mia.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3727427AF51420C951CC3D58 /* MiaShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 080AE7BCECACDD46B727E5DA /* Build configuration list for PBXNativeTarget "MiaShare" */;
+			buildPhases = (
+				66E7DE61529527B9F445FEDC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MiaShare;
+			packageProductDependencies = (
+			);
+			productName = MiaShare;
+			productReference = 5D71A6DA599602CBC08388D7 /* MiaShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B96ED3399CB06D06CD81B0D3 /* MiaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 91D0EA6FFCF0D0293760AC83 /* Build configuration list for PBXNativeTarget "MiaTests" */;
+			buildPhases = (
+				90381A40D0F8950EEAF384A0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MiaTests;
+			packageProductDependencies = (
+			);
+			productName = MiaTests;
+			productReference = 86F8B51603664A6E454BE34B /* MiaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D6FA7E65798C0983AEF968A2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					29E7EAAD51AB53209759F930 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					3727427AF51420C951CC3D58 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					B96ED3399CB06D06CD81B0D3 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 72FC69D09BBA4CE8F104EA1B /* Build configuration list for PBXProject "Mia" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1970AFF70544C290978C6472;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2F2E7D419B4EC63D857119FC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				29E7EAAD51AB53209759F930 /* Mia */,
+				3727427AF51420C951CC3D58 /* MiaShare */,
+				B96ED3399CB06D06CD81B0D3 /* MiaTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		66E7DE61529527B9F445FEDC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E54CF0576210C8460893A73 /* CaptureQueue.swift in Sources */,
+				543D6AB9C124DED3D1A0E41D /* Lemma.swift in Sources */,
+				007A078E981CB5E3F465F2E3 /* Reminders.swift in Sources */,
+				9CE84C314917403B78FB2CE0 /* SRS.swift in Sources */,
+				F4D8C92885530E9A0ED70FFF /* ShareViewController.swift in Sources */,
+				C8451C51D251748D2E1BF8DC /* WordRecord.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		85107CA02EADCC51E9E704F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61568EEF4D67A136AC23A8E3 /* Backend.swift in Sources */,
+				60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */,
+				6EEE46C89F4D305F3CC28956 /* Definitions.swift in Sources */,
+				619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */,
+				AC7E92FB7C2F6088FF208271 /* Lemma.swift in Sources */,
+				83E90B1F57EFDF91483D7D5A /* LoginView.swift in Sources */,
+				86389984E21BD63A334CC9C2 /* MiaApp.swift in Sources */,
+				4EFBC62AD55AC41DB9F27CF5 /* Reminders.swift in Sources */,
+				BDA888F6E810581A67487A65 /* ReviewView.swift in Sources */,
+				5AC42630B0518C24B01E14E1 /* SRS.swift in Sources */,
+				8C043C2716C2CDA78FEF30FF /* SessionStore.swift in Sources */,
+				C30A2147622AC3F850D48463 /* SettingsView.swift in Sources */,
+				A4E319C55504724CE24F84E7 /* TutorStore.swift in Sources */,
+				BAEBA742330C5DE872A5093E /* TutorView.swift in Sources */,
+				972F8ACE614D0D648B6A8714 /* WordRecord.swift in Sources */,
+				CE2C68CA229564F8715F4B9C /* WordStore.swift in Sources */,
+				87A8BC52FFE0EB5423C2346E /* WordsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		90381A40D0F8950EEAF384A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B6D1BE45A48D9AA9D53B4863 /* CaptureQueue.swift in Sources */,
+				B4CB629653CA2A44B6FDAD02 /* Lemma.swift in Sources */,
+				E1DF753E692A61058BC90543 /* PortParityTests.swift in Sources */,
+				A207A7233BA3E89DF78BDF06 /* Reminders.swift in Sources */,
+				AD61A18CE96095A1F5934A0E /* RemindersTests.swift in Sources */,
+				332F7DF7FAF2E9939C71A1AA /* SRS.swift in Sources */,
+				2BB0E06D07CDFB23F7EA5C79 /* WordRecord.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C47A7A0E088AFAD9CFCF0B46 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3727427AF51420C951CC3D58 /* MiaShare */;
+			targetProxy = D347AF0CA78816D060DDC051 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		274AEC02AA16954D276B7C1D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/Mia.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Mia;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4BC8C97FE21EE0DAE708A559 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		703DB086569FBDD4D374D089 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		94DB5CE18598F472694BC3C8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/MiaShare.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia.share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A90A99E7F2A0DF8CE3ABD1AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D9EDDD18389B3306830FC8C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/MiaShare.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia.share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F3E438319973A95D183661C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/Mia.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Mia;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.reddwu.mia;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F956AA9341EF83B86ECAD055 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		080AE7BCECACDD46B727E5DA /* Build configuration list for PBXNativeTarget "MiaShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9EDDD18389B3306830FC8C3 /* Debug */,
+				94DB5CE18598F472694BC3C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		72FC69D09BBA4CE8F104EA1B /* Build configuration list for PBXProject "Mia" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F956AA9341EF83B86ECAD055 /* Debug */,
+				703DB086569FBDD4D374D089 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		91D0EA6FFCF0D0293760AC83 /* Build configuration list for PBXNativeTarget "MiaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90A99E7F2A0DF8CE3ABD1AE /* Debug */,
+				4BC8C97FE21EE0DAE708A559 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FDF89F071289D0ABE2E5BD10 /* Build configuration list for PBXNativeTarget "Mia" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3E438319973A95D183661C1 /* Debug */,
+				274AEC02AA16954D276B7C1D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/insforge/insforge-swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.0.9;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0F067E2E3BE0DAFEDC9F59E7 /* InsForge */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */;
+			productName = InsForge;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D6FA7E65798C0983AEF968A2 /* Project object */;
+}
