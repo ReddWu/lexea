@@ -4,6 +4,7 @@ allowed_redirect_urls = [
   "https://mia-tutor.vercel.app/api/auth/callback",
   "https://bakaoahlcnpnefebfoiogckiaiehngmk.chromiumapp.org/",
   "https://mcodfcifhmeclephboajdkcjendbeaan.chromiumapp.org/",
+  "https://hdmmoighonemflckajnmkjneochpggik.chromiumapp.org/",
   "mia://auth/callback",
 ]
 require_email_verification = true
