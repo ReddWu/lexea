@@ -42,8 +42,7 @@
   "host_permissions": [
     "https://mia-tutor.vercel.app/*",
     "https://kv54z32g.us-east.insforge.app/*",
-    "http://localhost:3002/*",
-    "https://api.dictionaryapi.dev/*"
+    "http://localhost:3002/*"
   ],
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAul3H408QBa4eXOw+HM1oqAgvWt7MLeAt8NpQnk4MJkhdOQqQtt+hvTopVyZ718711BULk/gi+hjAQHOtOAPINlfHyivb2SlnQQU56RJzMIEoeMCI3SrqHd8KcFnAym7yYFxmUv4yi9gpejZl/m/YXxJgscfxzSLFZVkgZLWvnJ8kbsrYwXGdCxFiqlLm17bY6yvX7ylUCk5NAVxhKLGH+0I1J5rhEIlcDMmiYIIPREAXs62riLH/GnWzg3wc81TbJlN5DOaTNSPV4m/VciXzEruVrXqP4CdXK6wmWAeUleVLGxPOZcdASgBVOM4ckkHylmm15F6rUwLAEZbo2HMDDQIDAQAB"
 }

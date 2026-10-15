@@ -2,7 +2,7 @@ import Foundation
 
 /// Looks up what a card's back should say. Same sources as the website:
 /// the Mia backend /api/define (LLM: simple English + 中文 + reading) and
-/// dictionaryapi.dev as the English fallback.
+/// Datamuse as the English fallback.
 enum Definitions {
     struct Result {
         var plain: String?
@@ -42,31 +42,27 @@ enum Definitions {
         return Result(plain: out.plain, zh: out.zh, reading: out.reading)
     }
 
+    /// Datamuse: no key, ~0.1s. (dictionaryapi.dev started hanging ~20s and
+    /// returning 522 in 2026-10.)
     private static func dictionary(_ lemma: String) async throws -> Result {
-        struct Entry: Decodable {
-            struct Phonetic: Decodable { let text: String? }
-            struct Meaning: Decodable {
-                struct Def: Decodable { let definition: String }
-                let partOfSpeech: String?
-                let definitions: [Def]
-            }
-            let phonetic: String?
-            let phonetics: [Phonetic]?
-            let meanings: [Meaning]
+        struct Entry: Decodable { let word: String; let tags: [String]?; let defs: [String]? }
+        func fetch(_ s: String) async throws -> Entry? {
+            var c = URLComponents(string: "https://api.datamuse.com/words")!
+            c.queryItems = [.init(name: "sp", value: s), .init(name: "md", value: "dr"),
+                            .init(name: "ipa", value: "1"), .init(name: "max", value: "1")]
+            let (data, resp) = try await URLSession.shared.data(for: URLRequest(url: c.url!, timeoutInterval: 6))
+            guard (resp as? HTTPURLResponse)?.statusCode == 200,
+                  let e = try JSONDecoder().decode([Entry].self, from: data).first,
+                  e.word.lowercased() == s.lowercased() else { return nil } // sp= can fuzzy-match
+            return e
         }
-        func fetch(_ s: String) async throws -> [Entry]? {
-            let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/")!.appendingPathComponent(s)
-            // this free API can hang ~20s and then 522 — don't hold the card for it
-            let (data, resp) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 6))
-            guard (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-            return try JSONDecoder().decode([Entry].self, from: data)
-        }
-        var entries = try await fetch(lemma)
-        if entries == nil, let base = Lemma.baseCandidates(lemma).first { entries = try? await fetch(base) }
-        guard let entries, let first = entries.first else { throw URLError(.fileDoesNotExist) }
-        let reading = entries.lazy.compactMap { $0.phonetic ?? $0.phonetics?.compactMap(\.text).first }.first
-        let defs = first.meanings.prefix(2).compactMap { m in
-            m.definitions.first.map { "\(m.partOfSpeech.map { "(\($0)) " } ?? "")\($0.definition)" }
+        var entry = try await fetch(lemma)
+        if entry == nil, let base = Lemma.baseCandidates(lemma).first { entry = try? await fetch(base) }
+        guard let entry else { throw URLError(.fileDoesNotExist) }
+        let reading = entry.tags?.first { $0.hasPrefix("ipa_pron:") }.map { "/\($0.dropFirst(9))/" }
+        let defs = (entry.defs ?? []).prefix(2).map { d -> String in
+            let parts = d.split(separator: "\t", maxSplits: 1)
+            return parts.count == 2 ? "(\(parts[0])) \(parts[1].trimmingCharacters(in: .whitespaces))" : d
         }
         return Result(plain: defs.isEmpty ? nil : defs.joined(separator: "\n"), zh: nil, reading: reading)
     }

@@ -96,21 +96,28 @@ export default function Review() {
     }
     const noEntry = "(no dictionary entry — recall it from the sentence)";
     try {
-      const lookup = (lemma) =>
-        fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(lemma));
-      let r = await lookup(current.lemma);
-      if (r.status === 404) {
+      // Datamuse: no key, ~0.1s (dictionaryapi.dev started hanging and 522-ing in 2026-10)
+      const lookup = async (lemma) => {
+        const r = await fetch(
+          "https://api.datamuse.com/words?md=dr&ipa=1&max=1&sp=" + encodeURIComponent(lemma),
+          { signal: AbortSignal.timeout(6000) }
+        );
+        if (!r.ok) return null;
+        const [entry] = await r.json();
+        return entry && String(entry.word).toLowerCase() === lemma.toLowerCase() ? entry : null;
+      };
+      let entry = await lookup(current.lemma);
+      if (!entry) {
         const base = baseForm(current.lemma);
-        if (base) r = await lookup(base);
+        if (base) entry = await lookup(base);
       }
-      if (!r.ok) {
+      if (!entry) {
         if (!hasEn && fresh()) setDef(noEntry);
         return;
       }
-      const data = await r.json();
       if (!current.phonetic) {
-        const entry = (data || []).find((e) => e.phonetic || e.phonetics?.find((p) => p.text));
-        const text = entry ? entry.phonetic || entry.phonetics?.find((p) => p.text)?.text : "";
+        const ipa = (entry.tags || []).find((t) => t.startsWith("ipa_pron:"));
+        const text = ipa ? `/${ipa.slice(9)}/` : "";
         if (text) {
           if (fresh()) setPhon(text);
           fetch("/api/words", {
@@ -121,15 +128,10 @@ export default function Review() {
         }
       }
       if (!hasEn) {
-        const out = [];
-        for (const entry of data) {
-          for (const m of entry.meanings || []) {
-            const d = m.definitions && m.definitions[0];
-            if (d?.definition) out.push((m.partOfSpeech ? `(${m.partOfSpeech}) ` : "") + d.definition);
-            if (out.length >= 3) break;
-          }
-          if (out.length >= 3) break;
-        }
+        const out = (entry.defs || []).slice(0, 3).map((d) => {
+          const [pos, text] = d.split("\t");
+          return text ? `(${pos}) ${text.trim()}` : d.trim();
+        });
         if (fresh()) setDef(out.length ? out.join("\n") : noEntry);
       }
     } catch {

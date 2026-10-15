@@ -319,7 +319,7 @@ async function deleteCloud(lemma, lang) {
 
 // --- word info for the "Save to Mia" card -------------------------------
 // English merges three sources: bundled IPA + ECDICT (instant, offline),
-// dictionaryapi.dev (fallback), and the Mia backend /api/define (Claude).
+// Datamuse (fallback), and the Mia backend /api/define (LLM).
 // Other languages go straight to /api/define, which returns a reading
 // (pinyin / kana / IPA) alongside the explanation.
 let ipaMapPromise = null;
@@ -376,26 +376,27 @@ async function localQuick(word, lang = "en") {
   };
 }
 
+// Datamuse (WordNet/Wiktionary-backed, no key, ~0.1s). Replaced
+// dictionaryapi.dev in 2026-10 after it started hanging ~20s and returning 522.
 async function fetchDictOnce(word) {
-  // dictionaryapi.dev can hang ~20s and then 522 — never let it hold the card
   const res = await fetch(
-    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+    `https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&md=dr&ipa=1&max=1`,
     { signal: AbortSignal.timeout(6000) }
   );
   if (!res.ok) return null;
   const data = await res.json();
   const entry = Array.isArray(data) ? data[0] : null;
-  if (!entry) return null;
-  const phonetic =
-    entry.phonetic || (entry.phonetics || []).find((p) => p.text)?.text || null;
-  const def =
-    (entry.meanings || [])
-      .flatMap((m) => m.definitions || [])
-      .map((d) => d.definition)
-      .find(Boolean) || null;
-  return { phonetic, dictDef: def };
+  if (!entry || String(entry.word).toLowerCase() !== word.toLowerCase()) return null; // sp= can fuzzy-match
+  const ipa = (entry.tags || []).find((t) => t.startsWith("ipa_pron:"));
+  const phonetic = ipa ? `/${ipa.slice(9)}/` : null;
+  const first = (entry.defs || [])[0];
+  let dictDef = null;
+  if (first) {
+    const [pos, text] = first.split("\t");
+    dictDef = text ? `(${pos}) ${text.trim()}` : first.trim();
+  }
+  return { phonetic, dictDef };
 }
-
 async function fetchDict(word) {
   try {
     const w = word.toLowerCase();
@@ -502,7 +503,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // network dictionary definition (~1-2s) — interim English def before the LLM
   if (msg?.type === "dictdef" && msg.payload?.word) {
     if (msg.payload.lang && msg.payload.lang !== "en") {
-      sendResponse({ ok: true }); // dictionaryapi.dev is English-only
+      sendResponse({ ok: true }); // the online dictionary is English-only
       return false;
     }
     fetchDict(msg.payload.word)

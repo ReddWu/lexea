@@ -32,7 +32,7 @@ detritus") because iCloud adds extended attributes.
 - **Share extension:** queues words in the App Group (`pending-captures.json`)
   without touching the network. The app pushes the queue when it becomes active.
 - **Definitions:** `POST {MIA_WEB_URL}/api/define` with the user's token, with
-  dictionaryapi.dev as the English fallback. Results get written back to the row.
+  Datamuse as the English fallback. Results get written back to the row.
 - **Tutor (Mia tab):** streams `POST {MIA_WEB_URL}/api/tutor` (NDJSON), the same
   agent the website uses. When Mia saves or grades a word, the word list refreshes.
   Each user's conversation is kept in Application Support.
