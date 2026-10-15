@@ -56,12 +56,13 @@ enum Definitions {
         }
         func fetch(_ s: String) async throws -> [Entry]? {
             let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/")!.appendingPathComponent(s)
-            let (data, resp) = try await URLSession.shared.data(from: url)
+            // this free API can hang ~20s and then 522 — don't hold the card for it
+            let (data, resp) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 6))
             guard (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
             return try JSONDecoder().decode([Entry].self, from: data)
         }
         var entries = try await fetch(lemma)
-        if entries == nil, let base = Lemma.baseCandidates(lemma).first { entries = try await fetch(base) }
+        if entries == nil, let base = Lemma.baseCandidates(lemma).first { entries = try? await fetch(base) }
         guard let entries, let first = entries.first else { throw URLError(.fileDoesNotExist) }
         let reading = entries.lazy.compactMap { $0.phonetic ?? $0.phonetics?.compactMap(\.text).first }.first
         let defs = first.meanings.prefix(2).compactMap { m in

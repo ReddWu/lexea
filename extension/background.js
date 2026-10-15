@@ -377,8 +377,10 @@ async function localQuick(word, lang = "en") {
 }
 
 async function fetchDictOnce(word) {
+  // dictionaryapi.dev can hang ~20s and then 522 — never let it hold the card
   const res = await fetch(
-    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+    { signal: AbortSignal.timeout(6000) }
   );
   if (!res.ok) return null;
   const data = await res.json();
@@ -398,7 +400,7 @@ async function fetchDict(word) {
   try {
     const w = word.toLowerCase();
     // inflected forms often miss (subpoenas → subpoena): fall back to base candidates
-    for (const cand of [w, ...baseCandidates(w)]) {
+    for (const cand of [w, ...baseCandidates(w)].slice(0, 2)) {
       const hit = await fetchDictOnce(cand);
       if (hit && (hit.phonetic || hit.dictDef)) return hit;
     }

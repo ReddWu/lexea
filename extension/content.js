@@ -297,49 +297,38 @@
       if (payload.lang === "zh") cardZhBtn.style.display = "none"; // the word IS Chinese
       const seq = cardSeq; // guard: ignore responses that outlive this card
       const stale = () => seq !== cardSeq;
-      let dictMissed = false; // set when the bundled dictionary has no 中文
       const setPlain = (text) => {
         cardPlain.textContent = text;
         cardPlain.className = "mia-plain";
       };
+      // English meaning when the backend can't help (signed out, LLM down):
+      // the free online dictionary, which has a short timeout of its own.
+      const fallbackToDict = () =>
+        sendToMia({ type: "dictdef", payload }, (res) => {
+          if (stale()) return;
+          if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
+          if (cardPlain.className.includes("loading")) setPlain(res && res.dictDef ? res.dictDef : "Saved.");
+        });
       // stage 1 (~0ms): bundled dictionaries — phonetic + 中文, instantly.
-      // If they cover the word, that's it: no LLM call at all.
       sendToMia({ type: "phonetic", payload }, (res) => {
         if (stale()) return;
         if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
-        if (res && res.zh) {
-          cardZhText = res.zh;
-        } else {
-          dictMissed = true;
-          // rare miss (slang, names): ask the LLM for a contextual explanation + 中文
-          sendToMia({ type: "define", payload }, (llm) => {
-            if (stale()) return;
-            if (llm && llm.needsAuth) {
-              showToast("Sign in to Mia (extension icon → Sign in) for AI definitions & sync", true);
-            }
-            if (!llm || !llm.ok || !llm.plain) {
-              if (cardPlain.className.includes("loading")) setPlain("Saved.");
-              return;
-            }
-            if (llm.phonetic && !cardPhon.textContent) cardPhon.textContent = llm.phonetic;
-            setPlain(llm.plain);
-            if (llm.zh) {
-              cardZhText = llm.zh;
-              if (cardZh.style.display === "block") cardZh.textContent = llm.zh;
-            }
-          });
-        }
-      });
-      // stage 2 (~1-2s): online dictionary English definition for the plain area
-      sendToMia({ type: "dictdef", payload }, (res) => {
-        if (stale()) return;
-        if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
-        if (res && res.dictDef) {
-          if (cardPlain.className.includes("loading")) setPlain(res.dictDef);
-        } else if (!dictMissed && cardPlain.className.includes("loading")) {
-          // dictionary hit for 中文 but no English def online — done anyway
-          setPlain("Saved.");
-        }
+        if (res && res.zh) cardZhText = res.zh;
+        // stage 2 (~1-2s): one LLM call for the plain-English meaning of the
+        // exact sense in this sentence (plus 中文 when the dictionary missed)
+        sendToMia({ type: "define", payload }, (llm) => {
+          if (stale()) return;
+          if (llm && llm.needsAuth) {
+            showToast("Sign in to Mia (extension icon → Sign in) for AI definitions & sync", true);
+          }
+          if (!llm || !llm.ok || !llm.plain) return fallbackToDict();
+          if (llm.phonetic && !cardPhon.textContent) cardPhon.textContent = llm.phonetic;
+          setPlain(llm.plain);
+          if (llm.zh && !cardZhText) {
+            cardZhText = llm.zh;
+            if (cardZh.style.display === "block") cardZh.textContent = llm.zh;
+          }
+        });
       });
     });
   });
