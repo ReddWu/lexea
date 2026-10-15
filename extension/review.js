@@ -202,6 +202,9 @@ function speak(word, lang) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
     u.lang = SPEAK_LANG[lang] || "en-US";
+    // Chrome's "Google …" voices sound far better than the OS defaults
+    const voices = speechSynthesis.getVoices().filter((v) => v.lang === u.lang);
+    u.voice = voices.find((v) => /google/i.test(v.name)) || voices.find((v) => v.localService) || voices[0] || null;
     u.rate = 0.9;
     speechSynthesis.speak(u);
   } catch (_e) {}

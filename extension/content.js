@@ -92,6 +92,9 @@
     #${CARD_ID} .mia-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
     #${CARD_ID} .mia-word{font-weight:700;font-size:16px;}
     #${CARD_ID} .mia-phon{color:#6b7280;font-size:13px;}
+    #${CARD_ID} .mia-speak{all:unset;cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;
+      border-radius:6px;align-self:center;}
+    #${CARD_ID} .mia-speak:hover{background:#f0f7ef;}
     #${CARD_ID} .mia-saved{margin-left:auto;color:#1a8917;font-size:11px;font-weight:600;}
     #${CARD_ID} .mia-plain{color:#111827;margin-bottom:8px;}
     #${CARD_ID} .mia-plain.loading{color:#9ca3af;}
@@ -117,6 +120,7 @@
   card.innerHTML = `
     <div class="mia-head">
       <span class="mia-word"></span>
+      <button class="mia-speak" title="Pronounce" aria-label="Pronounce">🔊</button>
       <span class="mia-phon"></span>
       <span class="mia-saved">✓ saved</span>
     </div>
@@ -127,11 +131,32 @@
   document.documentElement.appendChild(card);
   const cardWord = card.querySelector(".mia-word");
   const cardPhon = card.querySelector(".mia-phon");
+  const cardSpeak = card.querySelector(".mia-speak");
+  let cardLang = "en";
   const cardPlain = card.querySelector(".mia-plain");
   const cardZhBtn = card.querySelector(".mia-zh-btn");
   const cardZh = card.querySelector(".mia-zh");
   let cardZhText = null;
   let cardSeq = 0; // bumped per card; late async responses for older cards bail
+
+  // pronounce with the browser's built-in speech engine — instant, offline, free
+  const SPEAK_LANG = { en: "en-US", zh: "zh-CN", es: "es-ES", fr: "fr-FR", ja: "ja-JP" };
+  function speak(text, lang) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = SPEAK_LANG[lang] || "en-US";
+      // Chrome's "Google …" voices sound far better than the OS defaults
+      const voices = speechSynthesis.getVoices().filter((v) => v.lang === u.lang);
+      u.voice = voices.find((v) => /google/i.test(v.name)) || voices.find((v) => v.localService) || voices[0] || null;
+      u.rate = 0.9;
+      speechSynthesis.speak(u);
+    } catch (_e) {}
+  }
+  cardSpeak.addEventListener("click", (e) => {
+    e.stopPropagation();
+    speak(cardWord.textContent, cardLang);
+  });
 
   cardZhBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -294,6 +319,7 @@
 
     save(payload, () => {
       showCard(x, y, word);
+      cardLang = payload.lang;
       if (payload.lang === "zh") cardZhBtn.style.display = "none"; // the word IS Chinese
       const seq = cardSeq; // guard: ignore responses that outlive this card
       const stale = () => seq !== cardSeq;
