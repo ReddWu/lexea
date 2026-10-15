@@ -8,6 +8,68 @@
   const CARD_ID = "__vocab_mia_card__";
   let lastSelection = null;
 
+  // --- learning languages (set in the options page) -----------------------
+  let langs = ["en"];
+  try {
+    chrome.storage.local.get("miaLangs", (r) => {
+      if (Array.isArray(r.miaLangs) && r.miaLangs.length) langs = r.miaLangs;
+    });
+    chrome.storage.onChanged.addListener((ch) => {
+      if (ch.miaLangs && Array.isArray(ch.miaLangs.newValue)) langs = ch.miaLangs.newValue;
+    });
+  } catch (_e) {}
+
+  const KANA_RE = /[぀-ゟ゠-ヿ]/;
+  const HAN_RE = /[一-鿿㐀-䶿]/;
+  const VALID = {
+    en: /^[a-zA-Z][a-zA-Z'’ -]{1,59}$/,
+    fr: /^[a-zA-ZÀ-ÿœŒçÇ][a-zA-ZÀ-ÿœŒçÇ'’ -]{1,59}$/,
+    zh: /^[一-鿿㐀-䶿々]{1,8}$/,
+    ja: /^[぀-ゟ゠-ヿ一-鿿㐀-䶿ー々]{1,12}$/,
+  };
+  const SPANISH_ALLOWED = /^[\p{L}\p{M}\s'’.,;:¡!¿?…«»"“”()\-–—]+$/u;
+
+  function cleanSelection(text) {
+    return String(text || "").normalize("NFC").replace(/\s+/g, " ").trim();
+  }
+
+  function validSelection(text, lang) {
+    if (lang === "es") {
+      return (
+        text.length <= 120 &&
+        text.split(/\s+/).length <= 12 &&
+        /\p{L}/u.test(text) &&
+        SPANISH_ALLOWED.test(text)
+      );
+    }
+    return Boolean(VALID[lang]?.test(text));
+  }
+
+  // Which enabled language does this selection belong to? Script first
+  // (kana → ja, han → zh/ja), then the page language, then enabled order.
+  function detectLang(text, sel) {
+    const anchor =
+      sel?.anchorNode?.nodeType === Node.TEXT_NODE ? sel.anchorNode.parentElement : sel?.anchorNode;
+    const nearbyLang = anchor?.closest?.("[lang]")?.getAttribute("lang") || "";
+    const pageLang = (nearbyLang || document.documentElement.lang || "").slice(0, 2).toLowerCase();
+    if (KANA_RE.test(text)) return langs.includes("ja") ? "ja" : null;
+    if (HAN_RE.test(text)) {
+      if (langs.includes("zh") && langs.includes("ja")) return pageLang === "ja" ? "ja" : "zh";
+      if (langs.includes("zh")) return "zh";
+      if (langs.includes("ja")) return "ja";
+      return null;
+    }
+    // Latin script: candidates among enabled latin languages, page lang wins
+    const latin = langs.filter((l) => l === "en" || l === "es" || l === "fr");
+    if (!latin.length) return null;
+    if (langs.includes("es") && /[ñÑ¡¿]/.test(text)) return "es";
+    const hasAccents = /[À-ÿœŒ]/.test(text);
+    const cands = hasAccents ? latin.filter((l) => l !== "en") : latin;
+    if (!cands.length) return null;
+    if (cands.includes(pageLang)) return pageLang;
+    return cands[0];
+  }
+
   // --- styles (injected once) -------------------------------------------
   const style = document.createElement("style");
   style.textContent = `
@@ -120,13 +182,13 @@
   // back empty. The mouseup event's composedPath() exposes those shadow roots.
   function getSelectionData(path) {
     let sel = window.getSelection();
-    let text = sel && sel.toString ? sel.toString().trim() : "";
+    let text = sel && sel.toString ? cleanSelection(sel.toString()) : "";
     if (text) return { sel, text };
     for (const node of path || []) {
       const root = node instanceof ShadowRoot ? node : node && node.shadowRoot;
       if (root && typeof root.getSelection === "function") {
         const s = root.getSelection();
-        const t = s && s.toString ? s.toString().trim() : "";
+        const t = s && s.toString ? cleanSelection(s.toString()) : "";
         if (t) return { sel: s, text: t };
       }
     }
@@ -181,17 +243,18 @@
     setTimeout(() => {
       const { sel, text } = getSelectionData(path);
       // ignore empty / paragraph-sized selections
-      if (!text || text.length > 60 || text.split(/\s+/).length > 5) {
+      if (!text || text.length > 120 || text.split(/\s+/).length > 12) {
         hideBtn();
         return;
       }
-      // a real word or short phrase: letters/apostrophe/hyphen/space, len 2–60.
+      // a real word or short phrase in one of the enabled learning languages.
       // rejects junk like "wprds_coach_api", codes, numbers, single letters.
-      if (!/^[a-zA-Z][a-zA-Z'’ -]{1,59}$/.test(text)) {
+      const lang = detectLang(text, sel);
+      if (!lang || !validSelection(text, lang)) {
         hideBtn();
         return;
       }
-      lastSelection = { word: text, sentence: getSentence(sel, text) };
+      lastSelection = { word: text, lang, sentence: getSentence(sel, text) };
       btn.style.left = e.pageX + "px";
       btn.style.top = e.pageY + 14 + "px";
       btn.style.display = "block";
@@ -216,9 +279,10 @@
 
   btn.addEventListener("click", () => {
     if (!lastSelection) return;
-    const { word, sentence } = lastSelection;
+    const { word, lang, sentence } = lastSelection;
     const payload = {
       word,
+      lang: lang || "en",
       context: sentence,
       url: location.href,
       title: document.title,
@@ -230,6 +294,7 @@
 
     save(payload, () => {
       showCard(x, y, word);
+      if (payload.lang === "zh") cardZhBtn.style.display = "none"; // the word IS Chinese
       const seq = cardSeq; // guard: ignore responses that outlive this card
       const stale = () => seq !== cardSeq;
       let dictMissed = false; // set when the bundled dictionary has no 中文
@@ -249,6 +314,9 @@
           // rare miss (slang, names): ask the LLM for a contextual explanation + 中文
           sendToMia({ type: "define", payload }, (llm) => {
             if (stale()) return;
+            if (llm && llm.needsAuth) {
+              showToast("Sign in to Mia (extension icon → Sign in) for AI definitions & sync", true);
+            }
             if (!llm || !llm.ok || !llm.plain) {
               if (cardPlain.className.includes("loading")) setPlain("Saved.");
               return;

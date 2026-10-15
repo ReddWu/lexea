@@ -30,6 +30,10 @@ export default function Tutor() {
   async function loadWords(markDiff) {
     try {
       const res = await fetch("/api/words", { cache: "no-store" });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.status);
       const next = data.words || [];

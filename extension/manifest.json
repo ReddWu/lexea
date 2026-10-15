@@ -1,11 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Mia — Save words while you read",
-  "version": "0.1.0",
-  "description": "Select any word on any page — Mia saves it with its sentence, shows a plain-English meaning + 中文, and weaves it back into your AI tutoring sessions.",
+  "version": "0.3.1",
+  "description": "Select a word or phrase on any page — Mia saves it with its sentence, explains it, and tutors you on it later.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "identity"
   ],
   "background": {
     "service_worker": "background.js"
@@ -13,7 +20,13 @@
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Mia vocabulary"
+    "default_title": "Mia vocabulary",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
@@ -27,8 +40,10 @@
     }
   ],
   "host_permissions": [
-    "https://mia.butterbase.dev/*",
+    "https://mia-tutor.vercel.app/*",
+    "https://kv54z32g.us-east.insforge.app/*",
     "http://localhost:3002/*",
     "https://api.dictionaryapi.dev/*"
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAul3H408QBa4eXOw+HM1oqAgvWt7MLeAt8NpQnk4MJkhdOQqQtt+hvTopVyZ718711BULk/gi+hjAQHOtOAPINlfHyivb2SlnQQU56RJzMIEoeMCI3SrqHd8KcFnAym7yYFxmUv4yi9gpejZl/m/YXxJgscfxzSLFZVkgZLWvnJ8kbsrYwXGdCxFiqlLm17bY6yvX7ylUCk5NAVxhKLGH+0I1J5rhEIlcDMmiYIIPREAXs62riLH/GnWzg3wc81TbJlN5DOaTNSPV4m/VciXzEruVrXqP4CdXK6wmWAeUleVLGxPOZcdASgBVOM4ckkHylmm15F6rUwLAEZbo2HMDDQIDAQAB"
 }

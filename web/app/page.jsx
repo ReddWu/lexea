@@ -11,6 +11,10 @@ export default function Dashboard() {
   async function load() {
     try {
       const res = await fetch("/api/words", { cache: "no-store" });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.status);
       setWords(data.words || []);
@@ -22,12 +26,12 @@ export default function Dashboard() {
     load();
   }, []);
 
-  async function del(lemma) {
-    setWords((ws) => ws.filter((w) => w.lemma !== lemma));
+  async function del(lemma, lang) {
+    setWords((ws) => ws.filter((w) => !(w.lemma === lemma && (w.lang || "en") === (lang || "en"))));
     await fetch("/api/words", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lemma }),
+      body: JSON.stringify({ lemma, lang: lang || "en" }),
     });
   }
 
@@ -92,12 +96,13 @@ export default function Dashboard() {
                       ? ["ok", "solid"]
                       : ["", ""];
               return (
-                <li className="wrow" key={w.lemma}>
+                <li className="wrow" key={`${w.lang || "en"}:${w.lemma}`}>
                   {tag[1] && <span className={`tag ${tag[0]}`}>{tag[1]}</span>}
                   <span className="w">{w.word}</span>
+                  {(w.lang || "en") !== "en" && <span className="tag">{w.lang}</span>}
                   <span className="c">{w.context || ""}</span>
                   <span className="meta">{relDue(due, now)}</span>
-                  <button className="x" title="Remove" onClick={() => del(w.lemma)}>
+                  <button className="x" title="Remove" onClick={() => del(w.lemma, w.lang)}>
                     ✕
                   </button>
                 </li>

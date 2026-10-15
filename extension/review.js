@@ -78,8 +78,10 @@ async function loadDue() {
   return reviews.concat(news);
 }
 
+const RKEY = (rec) => (!rec.lang || rec.lang === "en" ? KEY(rec.lemma) : `w:${rec.lang}:${rec.lemma}`);
+
 async function saveRec(rec) {
-  await chrome.storage.local.set({ [KEY(rec.lemma)]: rec });
+  await chrome.storage.local.set({ [RKEY(rec)]: rec });
   chrome.runtime.sendMessage({ type: "syncWord", record: rec }, () => void chrome.runtime.lastError);
 }
 
@@ -105,11 +107,31 @@ async function dictLookup(lemma) {
 const hasCJK = (s) => /[一-鿿]/.test(s || "");
 
 // local dictionaries via the service worker — instant {phonetic, zh}
-function localQuick(word) {
+function localQuick(word, lang) {
   return new Promise((resolve) => {
     try {
-      chrome.runtime.sendMessage({ type: "phonetic", payload: { word } }, (res) =>
+      chrome.runtime.sendMessage({ type: "phonetic", payload: { word, lang: lang || "en" } }, (res) =>
         resolve(!chrome.runtime.lastError && res ? res : {})
+      );
+    } catch (_e) {
+      resolve({});
+    }
+  });
+}
+
+function contextualDefine(rec) {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          type: "define",
+          payload: {
+            word: rec.word || rec.lemma,
+            lang: rec.lang || "en",
+            context: rec.context || rec.contexts?.at(-1)?.sentence || "",
+          },
+        },
+        (res) => resolve(!chrome.runtime.lastError && res?.ok ? res : {})
       );
     } catch (_e) {
       resolve({});
@@ -121,8 +143,9 @@ function localQuick(word) {
 // `definition` = English, `translation` = 中文. Older caches stored English
 // dictionary text in `translation` — move it over.
 async function ensureDef(rec) {
+  const lang = rec.lang || "en";
   let dirty = false;
-  if (rec.translation && !hasCJK(rec.translation)) {
+  if (lang === "en" && rec.translation && !hasCJK(rec.translation)) {
     if (!rec.definition) rec.definition = rec.translation;
     rec.translation = null;
     dirty = true;
@@ -131,12 +154,12 @@ async function ensureDef(rec) {
   let zh = rec.translation || null;
   let en = rec.definition || null;
 
-  if (!phon || !zh) {
-    const q = await localQuick(rec.lemma);
+  if (lang === "en" && (!phon || !zh)) {
+    const q = await localQuick(rec.lemma, lang);
     if (!phon && q.phonetic) (phon = q.phonetic), (rec.phonetic = phon), (dirty = true);
     if (!zh && q.zh) (zh = q.zh), (rec.translation = zh), (dirty = true);
   }
-  if (!en) {
+  if (!en && lang === "en") {
     const data = await dictLookup(rec.lemma);
     if (data) {
       if (!phon) {
@@ -162,16 +185,23 @@ async function ensureDef(rec) {
       }
     }
   }
-  if (dirty) await chrome.storage.local.set({ [KEY(rec.lemma)]: rec });
+  if (lang !== "en" && (!en || !zh || !phon)) {
+    const q = await contextualDefine(rec);
+    if (!en && q.plain) (en = q.plain), (rec.definition = en), (dirty = true);
+    if (!zh && q.zh) (zh = q.zh), (rec.translation = zh), (dirty = true);
+    if (!phon && q.phonetic) (phon = q.phonetic), (rec.phonetic = phon), (dirty = true);
+  }
+  if (dirty) await chrome.storage.local.set({ [RKEY(rec)]: rec });
   return { en, zh, phon };
 }
 
 // pronounce with the built-in speech engine — instant, offline
-function speak(word) {
+const SPEAK_LANG = { en: "en-US", zh: "zh-CN", es: "es-ES", fr: "fr-FR", ja: "ja-JP" };
+function speak(word, lang) {
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-US";
+    u.lang = SPEAK_LANG[lang] || "en-US";
     u.rate = 0.9;
     speechSynthesis.speak(u);
   } catch (_e) {}
@@ -201,11 +231,11 @@ const SPEAK_BTN = (w) =>
   `<button class="speak" data-word="${esc(w)}" title="Pronounce" style="border:none;background:none;font-size:20px;cursor:pointer;vertical-align:middle;">🔊</button>`;
 
 function wirePhonRow(rec) {
-  card.querySelectorAll(".speak").forEach((b) => b.addEventListener("click", () => speak(b.dataset.word)));
+  card.querySelectorAll(".speak").forEach((b) => b.addEventListener("click", () => speak(b.dataset.word, rec.lang)));
   const phonEl = document.getElementById("phon");
   if (!phonEl) return;
   if (rec.phonetic) phonEl.textContent = rec.phonetic;
-  else localQuick(rec.lemma).then((q) => q.phonetic && (phonEl.textContent = q.phonetic));
+  else localQuick(rec.lemma, rec.lang).then((q) => q.phonetic && (phonEl.textContent = q.phonetic));
 }
 
 function renderFront(rec) {

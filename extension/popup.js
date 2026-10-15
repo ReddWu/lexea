@@ -78,26 +78,48 @@ function render(words) {
   $("list").innerHTML = words
     .map(
       (w) =>
-        `<li><button class="del" data-lemma="${escapeHtml(w.lemma)}" title="Remove">✕</button>` +
-        `<div class="w">${escapeHtml(w.word)}</div>` +
+        `<li><button class="del" data-lemma="${escapeHtml(w.lemma)}" data-lang="${escapeHtml(w.lang || "en")}" title="Remove">✕</button>` +
+        `<div class="w">${escapeHtml(w.word)}${(w.lang || "en") !== "en" ? ` <small style="color:var(--faint);font-weight:400;">${escapeHtml(w.lang)}</small>` : ""}</div>` +
         (w.context ? `<div class="c">${escapeHtml(w.context)}</div>` : "") +
         `</li>`
     )
     .join("");
   $("list")
     .querySelectorAll(".del")
-    .forEach((b) => b.addEventListener("click", () => deleteWord(b.dataset.lemma)));
+    .forEach((b) => b.addEventListener("click", () => deleteWord(b.dataset.lemma, b.dataset.lang)));
 }
 
-async function deleteWord(lemma) {
-  await chrome.storage.local.remove("w:" + lemma);
-  chrome.runtime.sendMessage({ type: "deleteWord", lemma }, () => void chrome.runtime.lastError);
+async function deleteWord(lemma, lang) {
+  const key = !lang || lang === "en" ? "w:" + lemma : `w:${lang}:${lemma}`;
+  await chrome.storage.local.remove(key);
+  chrome.runtime.sendMessage({ type: "deleteWord", lemma, lang: lang || "en" }, () => void chrome.runtime.lastError);
   render(await allWords());
+}
+
+// --- account row -----------------------------------------------------------
+function renderAuth() {
+  chrome.runtime.sendMessage({ type: "authStatus" }, (res) => {
+    if (chrome.runtime.lastError || !res?.ok) return;
+    if (res.signedIn) {
+      $("authWho").textContent = res.email || res.name || "Signed in";
+      $("authAction").textContent = "Sign out";
+      $("authAction").onclick = () =>
+        chrome.runtime.sendMessage({ type: "signOut" }, () => renderAuth());
+    } else {
+      $("authWho").textContent = "Not signed in — words stay on this device";
+      $("authAction").textContent = "Sign in";
+      $("authAction").onclick = () => {
+        $("authAction").textContent = "…";
+        chrome.runtime.sendMessage({ type: "signIn" }, () => renderAuth());
+      };
+    }
+  });
 }
 
 (async () => {
   const words = await allWords();
   render(words);
+  renderAuth();
 
   // due-now count for the review button
   const t = Date.now();
@@ -134,7 +156,7 @@ async function deleteWord(lemma) {
 
   $("talk").addEventListener("click", async () => {
     const { miaBase } = await chrome.storage.local.get("miaBase");
-    const base = (miaBase || "https://mia.butterbase.dev").replace(/\/+$/, "");
+    const base = (miaBase || "https://mia-tutor.vercel.app").replace(/\/+$/, "");
     chrome.tabs.create({ url: `${base}/tutor` });
   });
 })();

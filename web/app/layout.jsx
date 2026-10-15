@@ -1,5 +1,6 @@
 import "./globals.css";
 import Link from "next/link";
+import AuthNav from "./AuthNav";
 
 export const metadata = {
   title: "Mia — the words you save show up in every conversation",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
             <Link className="pill" href="/tutor">
               Talk to Mia
             </Link>
+            <AuthNav />
           </div>
         </nav>
         {children}

@@ -28,3 +28,15 @@ out/
 .venv/
 everos-data/
 web/.vercel/
+.secrets/
+
+# iOS
+ios/Config/Secrets.xcconfig
+ios/*.xcodeproj/xcuserdata/
+ios/build/
+
+# local backups of env files and old project links
+*.bak-*
+
+# packaged builds (rebuild from extension/)
+dist/*.zip

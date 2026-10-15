@@ -1,26 +1,18 @@
 import { NextResponse } from "next/server";
+import { updateSession } from "@insforge/sdk/ssr/middleware";
 
-// Optional password gate. If APP_PASSWORD is unset, the site is open.
-export function middleware(req) {
-  const pw = process.env.APP_PASSWORD || "";
-  if (!pw) return NextResponse.next();
-
-  const { pathname } = req.nextUrl;
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
-    return NextResponse.next();
-  }
-
-  const cookie = req.cookies.get("vocab_auth")?.value;
-  if (cookie === pw) return NextResponse.next();
-
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  return NextResponse.redirect(url);
+// Refresh the InsForge session cookies before anything renders. Data access
+// is protected per-user by RLS; pages redirect to /login client-side when
+// there is no session.
+export async function middleware(request) {
+  const response = NextResponse.next({ request });
+  await updateSession({
+    requestCookies: request.cookies,
+    responseCookies: response.cookies,
+  });
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|mia-extension.zip).*)"],
 };

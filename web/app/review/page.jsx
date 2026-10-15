@@ -21,6 +21,10 @@ export default function Review() {
     (async () => {
       try {
         const res = await fetch("/api/words", { cache: "no-store" });
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || res.status);
         const now = Date.now();
@@ -57,6 +61,39 @@ export default function Review() {
     const hasEn = Boolean(enStored);
     setDef(hasEn ? enStored : "Looking it up…");
     if (hasEn && current.phonetic) return; // nothing left to look up
+    if ((current.lang || "en") !== "en") {
+      try {
+        const r = await fetch("/api/define", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            word: current.word || current.lemma,
+            lang: current.lang,
+            context: current.context || current.contexts?.at(-1)?.sentence || "",
+          }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || r.status);
+        if (!fresh()) return;
+        if (!hasEn) setDef(data.plain || "(definition unavailable)");
+        if (!isZh && data.zh) setZh(data.zh);
+        if (!current.phonetic && data.reading) setPhon(data.reading);
+        const patch = {};
+        if (!hasEn && data.plain) patch.definition = data.plain;
+        if (!isZh && data.zh) patch.translation = data.zh;
+        if (!current.phonetic && data.reading) patch.phonetic = data.reading;
+        if (Object.keys(patch).length) {
+          fetch("/api/words", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lemma: current.lemma, lang: current.lang, patch }),
+          }).catch(() => {});
+        }
+      } catch {
+        if (!hasEn && fresh()) setDef("(definition unavailable)");
+      }
+      return;
+    }
     const noEntry = "(no dictionary entry — recall it from the sentence)";
     try {
       const lookup = (lemma) =>
@@ -79,7 +116,7 @@ export default function Review() {
           fetch("/api/words", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lemma: current.lemma, patch: { phonetic: text } }),
+            body: JSON.stringify({ lemma: current.lemma, lang: current.lang || "en", patch: { phonetic: text } }),
           }).catch(() => {});
         }
       }
@@ -107,7 +144,7 @@ export default function Review() {
       fetch("/api/words", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lemma: current.lemma, patch }),
+        body: JSON.stringify({ lemma: current.lemma, lang: current.lang || "en", patch }),
       }).catch(() => {});
       setDone((d) => d + 1);
       setQueue((q) => {
@@ -187,7 +224,7 @@ function Card({ card, revealed, def, phon, zh, zhShown, onShowZh, onReveal, onGr
       <div className="word">
         {card.word}{" "}
         <button
-          onClick={() => speak(card.word)}
+          onClick={() => speak(card.word, card.lang)}
           title="Pronounce"
           style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", verticalAlign: "middle" }}
         >
@@ -255,11 +292,11 @@ function Card({ card, revealed, def, phon, zh, zhShown, onShowZh, onReveal, onGr
 
 const hasCJK = (s) => /[一-鿿]/.test(s || "");
 
-function speak(word) {
+function speak(word, lang = "en") {
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-US";
+    u.lang = { en: "en-US", zh: "zh-CN", es: "es-ES", fr: "fr-FR", ja: "ja-JP" }[lang] || "en-US";
     u.rate = 0.9;
     speechSynthesis.speak(u);
   } catch (_e) {}

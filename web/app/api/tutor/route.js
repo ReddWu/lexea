@@ -17,7 +17,9 @@ import {
   configured,
   getProfile,
   saveProfile,
-} from "../../../lib/butterbase";
+  getToken,
+  userIdFromToken,
+} from "../../../lib/cloud";
 import { schedule, score } from "../../../lib/srs";
 import { chat, chatStream, llmConfigured } from "../../../lib/llm";
 import {
@@ -51,16 +53,18 @@ function sentenceWith(text, word) {
 }
 
 // words change slowly mid-conversation — a short cache saves ~0.5s per turn.
-// Busted whenever a tool writes.
-let wordsCache = { at: 0, data: null };
-async function cachedWords() {
-  if (wordsCache.data && Date.now() - wordsCache.at < 15000) return wordsCache.data;
-  const data = await listWords();
-  wordsCache = { at: Date.now(), data };
+// Busted whenever a tool writes. Keyed per user (the route serves everyone).
+const wordsCache = new Map();
+async function cachedWords(token) {
+  const key = userIdFromToken(token) || "anon";
+  const hit = wordsCache.get(key);
+  if (hit && Date.now() - hit.at < 15000) return hit.data;
+  const data = await listWords(token);
+  wordsCache.set(key, { at: Date.now(), data });
   return data;
 }
-function bustWords() {
-  wordsCache.at = 0;
+function bustWords(token) {
+  wordsCache.delete(userIdFromToken(token) || "anon");
 }
 
 const TOOLS = [
@@ -212,13 +216,13 @@ HOW YOU TEACH (non-negotiable)
 - Your English must always be flawless. NEVER deliberately misuse a word or plant grammar mistakes as a "test" — model correct usage only; probe understanding with questions instead.`;
 }
 
-async function runTool(name, args) {
+async function runTool(name, args, token) {
   if (name === "get_weak_words") {
-    const words = await listWords();
+    const words = await listWords(token);
     return { words: JSON.parse(weakWordsBlock(words, args.n || 20)) };
   }
   if (name === "review_word") {
-    let rec = await getWordByLemma(String(args.word || ""));
+    let rec = await getWordByLemma(token, String(args.word || ""));
     if (!rec) {
       // the model may grade a surface/inflected form ("scripts" for "script")
       const w = String(args.word || "").toLowerCase();
@@ -228,31 +232,31 @@ async function runTool(name, args) {
       if (/ing$/.test(w) && w.length >= 5) cands.push(w.slice(0, -3), w.slice(0, -3) + "e");
       if (/ed$/.test(w) && w.length >= 4) cands.push(w.slice(0, -2), w.slice(0, -2) + "e");
       for (const c of cands) {
-        rec = await getWordByLemma(c);
+        rec = await getWordByLemma(token, c);
         if (rec) break;
       }
     }
     if (!rec) return { error: "word not in vocabulary", word: args.word };
     const rating = Math.min(4, Math.max(1, parseInt(args.rating, 10) || 3));
     const patch = schedule(rec, rating);
-    await patchWord(rec.lemma, patch);
-    bustWords();
+    await patchWord(token, rec.lemma, patch, rec.lang || "en");
+    bustWords(token);
     return { ok: true, word: rec.word, rating, due: patch.due, interval_days: patch.interval_days, state: patch.state };
   }
   if (name === "add_word") {
     const word = String(args.word || "").trim();
     if (!/^[a-zA-Z][a-zA-Z'’ -]{1,59}$/.test(word)) return { error: "bad word" };
     const lemma = word.toLowerCase();
-    const existing = await getWordByLemma(lemma);
+    const existing = await getWordByLemma(token, lemma);
     if (existing) {
       const patch = {};
       if (args.context && !existing.context) patch.context = String(args.context).slice(0, 600);
       if (args.translation && !existing.translation) patch.translation = String(args.translation).slice(0, 200);
-      if (Object.keys(patch).length) await patchWord(lemma, patch);
+      if (Object.keys(patch).length) await patchWord(token, lemma, patch);
       return { ok: true, added: false, word };
     }
     const t = new Date().toISOString();
-    await insertWord({
+    await insertWord(token, {
       word,
       lemma,
       context: args.context ? String(args.context).slice(0, 600) : null,
@@ -267,13 +271,13 @@ async function runTool(name, args) {
       lapses: 0,
       interval_days: 0,
     });
-    bustWords();
+    bustWords(token);
     return { ok: true, added: true, word };
   }
   return { error: `unknown tool ${name}` };
 }
 
-async function updateProfile(oldProfile, history) {
+async function updateProfile(token, oldProfile, history) {
   const transcript = history
     .map((m) => `${m.role === "user" ? "Learner" : "Mia"}: ${String(m.content || "").slice(0, 400)}`)
     .join("\n")
@@ -293,12 +297,14 @@ async function updateProfile(oldProfile, history) {
     null
   );
   const text = (msg.content || "").trim();
-  if (text) await saveProfile(text);
+  if (text) await saveProfile(token, text);
 }
 
 export async function POST(req) {
   if (!configured()) return NextResponse.json({ error: "backend not configured" }, { status: 500 });
   if (!llmConfigured()) return NextResponse.json({ error: "LLM not configured" }, { status: 500 });
+  const token = getToken(req);
+  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body;
   try {
@@ -319,8 +325,8 @@ export async function POST(req) {
   let words, profile, everosMemory;
   try {
     [words, profile, everosMemory] = await Promise.all([
-      cachedWords(),
-      needMemory ? getProfile().catch(() => null) : null,
+      cachedWords(token),
+      needMemory ? getProfile(token).catch(() => null) : null,
       needMemory && everosConfigured()
         ? recall("learner profile, interests, recurring mistakes, recent tutoring progress")
             .then(memoryBlock)
@@ -379,7 +385,7 @@ export async function POST(req) {
               }
               let result;
               try {
-                result = await runTool(tc.function.name, args);
+                result = await runTool(tc.function.name, args, token);
               } catch (e) {
                 result = { error: String(e.message || e) };
               }
@@ -406,7 +412,7 @@ export async function POST(req) {
               sentenceWith(prevAssistant, asked) ||
               sentenceWith(textParts.join(" "), asked) ||
               null;
-            const result = await runTool("add_word", { word: asked, context: ctx || undefined });
+            const result = await runTool("add_word", { word: asked, context: ctx || undefined }, token);
             if (result && result.ok) {
               const ev = { tool: "add_word", args: { word: asked, context: ctx }, result };
               toolEvents.push(ev);
@@ -430,7 +436,7 @@ export async function POST(req) {
         if (ending) {
           // distill the session into the cross-session learner profile
           try {
-            await updateProfile(profile, history);
+            await updateProfile(token, profile, history);
           } catch (_e) {}
         }
         emit({ type: "done", reply, toolEvents });

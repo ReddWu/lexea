@@ -1,18 +1,158 @@
 // background.js — local-first store. Words live in chrome.storage.local
-// (one key per word: "w:<lemma>"). Each capture is ALSO mirrored through the
-// Mia backend (Next.js → Butterbase) — best-effort, non-blocking, no keys in
-// the extension. Override the backend base URL via chrome.storage `miaBase`.
+// (one key per word: "w:<lemma>" for English, "w:<lang>:<lemma>" otherwise).
+// Each capture is ALSO mirrored through the Mia backend (Next.js → InsForge)
+// when the user is signed in — best-effort, non-blocking, no keys in the
+// extension. Override the backend base URL via chrome.storage `miaBase`.
 
-const KEY = (lemma) => "w:" + lemma;
+const KEY = (lemma, lang) => (!lang || lang === "en" ? "w:" + lemma : `w:${lang}:${lemma}`);
 const nowISO = () => new Date().toISOString();
-const DEFAULT_MIA_BASE = "https://mia.butterbase.dev"; // set chrome.storage `miaBase` to http://localhost:3002 for local dev
+const DEFAULT_MIA_BASE = "https://mia-tutor.vercel.app"; // set chrome.storage `miaBase` to http://localhost:3002 for local dev
+const INSFORGE_HOST = "https://kv54z32g.us-east.insforge.app"; // auth only; data flows through the Mia backend
 
 async function miaBase() {
   const { miaBase } = await chrome.storage.local.get("miaBase");
   return (miaBase || DEFAULT_MIA_BASE).replace(/\/+$/, "");
 }
 
-// --- inflection-aware dedup -----------------------------------------------
+// --- auth: Google sign-in via InsForge (PKCE, client_type=desktop) ---------
+// Session { accessToken, refreshToken, email, name } lives in storage.
+// authFetch() attaches the token and transparently refreshes once on 401.
+
+async function getSession() {
+  const { miaSession } = await chrome.storage.local.get("miaSession");
+  if (!miaSession) return null;
+  // a session minted by another auth backend (e.g. before the 2026-10 move)
+  // can never refresh here — drop it so the UI asks for a fresh sign-in
+  if (miaSession.host !== INSFORGE_HOST) {
+    await chrome.storage.local.remove("miaSession");
+    return null;
+  }
+  return miaSession;
+}
+
+function b64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function signIn() {
+  const raw = crypto.getRandomValues(new Uint8Array(32));
+  const verifier = b64url(raw);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  const challenge = b64url(digest);
+  const redirectUri = chrome.identity.getRedirectURL();
+
+  const init = await fetch(
+    `${INSFORGE_HOST}/api/auth/oauth/google?redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&code_challenge=${challenge}&prompt=select_account`
+  );
+  if (!init.ok) throw new Error(`oauth init ${init.status}`);
+  const { authUrl } = await init.json();
+  if (!authUrl) throw new Error("no authUrl");
+
+  const finalUrl = await chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true });
+  const code = new URL(finalUrl).searchParams.get("insforge_code");
+  if (!code) throw new Error("sign-in cancelled");
+
+  const ex = await fetch(`${INSFORGE_HOST}/api/auth/oauth/exchange?client_type=desktop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, code_verifier: verifier }),
+  });
+  if (!ex.ok) throw new Error(`exchange ${ex.status}`);
+  const data = await ex.json();
+  if (!data.accessToken) throw new Error("no access token");
+  const session = {
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken || null,
+    email: data.user?.email || null,
+    name: data.user?.profile?.name || data.user?.email || null,
+    host: INSFORGE_HOST,
+  };
+  await chrome.storage.local.set({ miaSession: session });
+  return session;
+}
+
+async function signOut() {
+  await chrome.storage.local.remove("miaSession");
+}
+
+let refreshing = null; // dedupe concurrent refreshes
+async function refreshSession() {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    const s = await getSession();
+    if (!s?.refreshToken) return false;
+    try {
+      const res = await fetch(`${INSFORGE_HOST}/api/auth/refresh?client_type=desktop`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: s.refreshToken }),
+      });
+      if (!res.ok) {
+        await signOut(); // refresh token expired/revoked — require a new sign-in
+        return false;
+      }
+      const data = await res.json();
+      await chrome.storage.local.set({
+        miaSession: {
+          ...s,
+          accessToken: data.accessToken || s.accessToken,
+          refreshToken: data.refreshToken || s.refreshToken,
+        },
+      });
+      return true;
+    } catch (_e) {
+      return false; // network blip — keep the session, retry later
+    } finally {
+      refreshing = null;
+    }
+  })();
+  return refreshing;
+}
+
+// fetch with Bearer token; retries once through a refresh on 401.
+// Returns null when signed out (callers treat cloud sync as optional).
+async function authFetch(url, opts = {}) {
+  let s = await getSession();
+  if (!s) return null;
+  const withTok = (tok) => ({
+    ...opts,
+    headers: { ...(opts.headers || {}), Authorization: `Bearer ${tok}` },
+  });
+  let res = await fetch(url, withTok(s.accessToken));
+  if (res.status === 401) {
+    if (!(await refreshSession())) return res;
+    s = await getSession();
+    if (!s) return res;
+    res = await fetch(url, withTok(s.accessToken));
+  }
+  return res;
+}
+
+// --- language handling ------------------------------------------------------
+const LANGS = ["en", "zh", "es", "fr", "ja"];
+
+function cleanSurface(word) {
+  return String(word || "").normalize("NFC").replace(/\s+/g, " ").trim();
+}
+
+function canonicalLemma(word, lang = "en") {
+  let lemma = cleanSurface(word).toLocaleLowerCase(lang === "es" ? "es" : undefined);
+  if (lang === "es") {
+    // Keep punctuation in `word` for display, but do not create separate cards
+    // for ¿Qué tal?, "qué tal", and qué tal.
+    lemma = lemma
+      .replace(/^[¿¡"'“”«»()[\]{}.,;:!?…\-–—\s]+/u, "")
+      .replace(/[¿¡"'“”«»()[\]{}.,;:!?…\-–—\s]+$/u, "")
+      .replace(/\s+/g, " ");
+  }
+  return lemma;
+}
+
+// --- inflection-aware dedup (English only) ----------------------------------
 // "running", "runs", "ran" and "run" are one word. Conservative on purpose:
 // plural/3rd-person -s, -ing, -ed and common irregulars only. We deliberately
 // do NOT strip -er/-est/-ly (teacher ≠ teach, writer ≠ write).
@@ -53,24 +193,39 @@ function baseCandidates(w) {
   return [...out];
 }
 
-// Resolve which storage key an incoming word belongs to: exact lemma first,
-// then "incoming is a variant of a stored base", then the reverse.
-async function resolveLemma(word) {
-  const lemma = (word || "").trim().toLowerCase();
+// Resolve which storage key an incoming word belongs to. English gets the
+// inflection dance; other languages match the exact (lowercased) form.
+async function resolveLemma(word, lang = "en") {
+  const lemma = canonicalLemma(word, lang);
+  if (lang === "es") {
+    const all = await chrome.storage.local.get(null);
+    for (const [key, rec] of Object.entries(all)) {
+      if (!key.startsWith("w:es:")) continue;
+      const existing = rec?.lemma || key.slice(5);
+      if (canonicalLemma(existing, "es") === lemma) return existing;
+    }
+    return lemma;
+  }
+  if (lang !== "en") return lemma;
   const all = await chrome.storage.local.get(null);
-  const have = new Set(Object.keys(all).filter((k) => k.startsWith("w:")).map((k) => k.slice(2)));
+  const have = new Set(
+    Object.keys(all)
+      .filter((k) => k.startsWith("w:") && !/^w:(zh|es|fr|ja):/.test(k))
+      .map((k) => k.slice(2))
+  );
   if (have.has(lemma)) return lemma;
   for (const c of baseCandidates(lemma)) if (have.has(c)) return c;
   for (const l of have) if (baseCandidates(l).includes(lemma)) return l;
   return lemma;
 }
 
-function newRecord(p) {
+function newRecord(p, lemma) {
   const t = nowISO();
   const sentence = p.context && p.context.trim() ? p.context.trim() : null;
   return {
-    word: p.word.trim(),
-    lemma: p.word.trim().toLowerCase(),
+    word: cleanSurface(p.word),
+    lemma,
+    lang: LANGS.includes(p.lang) ? p.lang : "en",
     translation: null,
     context: sentence,
     contexts: sentence ? [{ sentence, url: p.url || null, title: p.title || null, at: t }] : [],
@@ -95,9 +250,12 @@ function newRecord(p) {
 }
 
 async function saveLocal(p) {
-  if (!(p.word || "").trim()) throw new Error("empty word");
-  const lemma = await resolveLemma(p.word); // inflection-aware: may land on an existing record
-  const k = KEY(lemma);
+  const word = cleanSurface(p.word);
+  if (!word) throw new Error("empty word");
+  const lang = LANGS.includes(p.lang) ? p.lang : "en";
+  const lemma = await resolveLemma(word, lang); // inflection-aware / phrase-aware
+  if (!lemma) throw new Error("empty word");
+  const k = KEY(lemma, lang);
   const cur = (await chrome.storage.local.get(k))[k];
   let rec;
   if (cur) {
@@ -115,7 +273,7 @@ async function saveLocal(p) {
     if (rec.status !== "archived") rec.status = "active"; // re-seeing a "known" word reactivates it
     rec.updated_at = nowISO();
   } else {
-    rec = newRecord(p);
+    rec = newRecord({ ...p, word }, lemma);
   }
   await chrome.storage.local.set({ [k]: rec });
   return rec;
@@ -128,26 +286,31 @@ function cloudBody(rec) {
   return rest;
 }
 
+// Best-effort (local is the source of truth): never throws, but reports the
+// outcome so the manual "Upload all" button can tell real successes apart.
 async function pushCloud(rec) {
   try {
     const base = await miaBase();
-    await fetch(`${base}/api/sync`, {
+    const res = await authFetch(`${base}/api/sync`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cloudBody(rec)),
     });
-  } catch (_e) {
-    // best-effort; local is the source of truth
+    if (!res) return { ok: false, error: "not signed in" };
+    if (!res.ok) return { ok: false, error: `sync ${res.status}` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
   }
 }
 
-async function deleteCloud(lemma) {
+async function deleteCloud(lemma, lang) {
   try {
     const base = await miaBase();
-    await fetch(`${base}/api/words`, {
+    await authFetch(`${base}/api/words`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lemma }),
+      body: JSON.stringify({ lemma, lang: lang || "en" }),
     });
   } catch (_e) {
     // best-effort
@@ -155,13 +318,10 @@ async function deleteCloud(lemma) {
 }
 
 // --- word info for the "Save to Mia" card -------------------------------
-// Merges two sources (both CORS-open, called from the service worker):
-//   1. dictionaryapi.dev  → phonetic (IPA) + fallback English definition
-//   2. the Mia backend /api/define (Claude) → plain-English explanation + 中文
-// Results are written back onto the stored record (best-effort).
-// --- bundled IPA dictionary (open-dict-data/ipa-dict, 126k words) ----------
-// Local-first phonetics: instant lookup, no network. dictionaryapi.dev stays
-// as async fallback for the words the bundle misses (slang, brand-new coinage).
+// English merges three sources: bundled IPA + ECDICT (instant, offline),
+// dictionaryapi.dev (fallback), and the Mia backend /api/define (Claude).
+// Other languages go straight to /api/define, which returns a reading
+// (pinyin / kana / IPA) alongside the explanation.
 let ipaMapPromise = null;
 function ipaMap() {
   if (!ipaMapPromise) {
@@ -198,8 +358,9 @@ async function localPhonetic(word) {
   return null;
 }
 
-// Everything we know about a word without touching the network.
-async function localQuick(word) {
+// Everything we know about a word without touching the network (English only).
+async function localQuick(word, lang = "en") {
+  if (lang !== "en") return { phonetic: null, zh: null };
   const [ipa, zhMap] = await Promise.all([localPhonetic(word), ecdict()]);
   const w = (word || "").trim().toLowerCase();
   let entry = null;
@@ -247,33 +408,38 @@ async function fetchDict(word) {
   }
 }
 
-async function fetchDefine(word, context) {
+async function fetchDefine(word, context, lang = "en") {
   const url = `${await miaBase()}/api/define`;
   try {
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word, context }),
+      body: JSON.stringify({ word, context, lang }),
     });
-    if (!res.ok) return {};
+    if (!res || !res.ok) return { needsAuth: res?.status === 401 || !res };
     const data = await res.json();
-    return { plain: data.plain || null, zh: data.zh || null };
+    return { plain: data.plain || null, zh: data.zh || null, reading: data.reading || null };
   } catch (_e) {
     return {}; // backend not running — dictionary fallback still works
   }
 }
 
 async function defineWord(p) {
-  // LLM contextual explanation; local layers already gave phonetic + 中文
-  const [quick, ai] = await Promise.all([localQuick(p.word), fetchDefine(p.word, p.context)]);
+  const lang = LANGS.includes(p.lang) ? p.lang : "en";
+  // LLM contextual explanation; local layers already gave phonetic + 中文 (en)
+  const [quick, ai] = await Promise.all([
+    localQuick(p.word, lang),
+    fetchDefine(p.word, p.context, lang),
+  ]);
   const info = {
-    phonetic: quick.phonetic || null,
+    phonetic: quick.phonetic || ai.reading || null,
     plain: ai.plain || null,
     zh: ai.zh || quick.zh || null,
+    needsAuth: ai.needsAuth || false,
   };
   // write back onto the saved record (best-effort; variant-aware)
-  const lemma = await resolveLemma(p.word);
-  const k = KEY(lemma);
+  const lemma = await resolveLemma(p.word, lang);
+  const k = KEY(lemma, lang);
   const cur = (await chrome.storage.local.get(k))[k];
   if (cur) {
     if (info.zh && !cur.translation) cur.translation = info.zh;
@@ -287,14 +453,34 @@ async function defineWord(p) {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // --- auth (popup/options UI) ---
+  if (msg?.type === "authStatus") {
+    getSession()
+      .then((s) => sendResponse({ ok: true, signedIn: !!s, email: s?.email || null, name: s?.name || null }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+  if (msg?.type === "signIn") {
+    signIn()
+      .then((s) => sendResponse({ ok: true, email: s.email, name: s.name }))
+      .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true;
+  }
+  if (msg?.type === "signOut") {
+    signOut()
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
   // instant local phonetic + 中文 for the capture card (no network),
   // persisted onto the stored record so review/dashboard get it too
   if (msg?.type === "phonetic" && msg.payload?.word) {
     (async () => {
-      const info = await localQuick(msg.payload.word);
+      const lang = LANGS.includes(msg.payload.lang) ? msg.payload.lang : "en";
+      const info = await localQuick(msg.payload.word, lang);
       try {
-        const lemma = await resolveLemma(msg.payload.word);
-        const k = KEY(lemma);
+        const lemma = await resolveLemma(msg.payload.word, lang);
+        const k = KEY(lemma, lang);
         const cur = (await chrome.storage.local.get(k))[k];
         if (cur) {
           let dirty = false;
@@ -313,6 +499,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   // network dictionary definition (~1-2s) — interim English def before the LLM
   if (msg?.type === "dictdef" && msg.payload?.word) {
+    if (msg.payload.lang && msg.payload.lang !== "en") {
+      sendResponse({ ok: true }); // dictionaryapi.dev is English-only
+      return false;
+    }
     fetchDict(msg.payload.word)
       .then((d) => sendResponse({ ok: true, ...d }))
       .catch(() => sendResponse({ ok: false }));
@@ -336,15 +526,49 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // review page asks us to mirror a graded card to the cloud
   if (msg?.type === "syncWord" && msg.record) {
     pushCloud(msg.record)
-      .then(() => sendResponse({ ok: true }))
+      .then((r) => sendResponse(r))
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
   // popup asks us to delete a word's cloud row
   if (msg?.type === "deleteWord" && msg.lemma) {
-    deleteCloud(msg.lemma)
+    deleteCloud(msg.lemma, msg.lang)
       .then(() => sendResponse({ ok: true }))
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true;
+  }
+  // options page: authenticated connection test
+  if (msg?.type === "testCloud") {
+    (async () => {
+      const base = await miaBase();
+      const res = await authFetch(`${base}/api/words`);
+      if (!res) return sendResponse({ ok: false, error: "not signed in" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return sendResponse({ ok: false, error: data.error || `HTTP ${res.status}` });
+      sendResponse({ ok: true, count: (data.words || []).length });
+    })().catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    return true;
+  }
+  // options page: pull cloud words that don't exist locally (never overwrites)
+  if (msg?.type === "pullWords") {
+    (async () => {
+      const base = await miaBase();
+      const res = await authFetch(`${base}/api/words`);
+      if (!res) return sendResponse({ ok: false, error: "not signed in" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return sendResponse({ ok: false, error: data.error || `HTTP ${res.status}` });
+      const local = await chrome.storage.local.get(null);
+      let added = 0;
+      for (const w of data.words || []) {
+        const k = KEY(w.lemma, w.lang || "en");
+        if (!local[k]) {
+          const { id, user_id, ...rec } = w;
+          await chrome.storage.local.set({ [k]: rec });
+          added++;
+        }
+      }
+      sendResponse({ ok: true, added });
+    })().catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
 });

@@ -1,11 +1,8 @@
-// options.js — Mia extension settings: backend URL + manual sync helpers.
+// options.js — Mia extension settings: account, learning languages, backend
+// URL + manual sync helpers. All cloud calls go through the background service
+// worker, which owns the auth token.
 const $ = (id) => document.getElementById(id);
-const DEFAULT_BASE = "https://mia.butterbase.dev";
-
-async function base() {
-  const { miaBase } = await chrome.storage.local.get("miaBase");
-  return (miaBase || DEFAULT_BASE).replace(/\/+$/, "");
-}
+const DEFAULT_BASE = "https://mia-tutor.vercel.app";
 
 function status(msg, ok = true) {
   $("status").textContent = msg;
@@ -19,6 +16,54 @@ async function localWords() {
     .map((k) => all[k]);
 }
 
+// --- account ----------------------------------------------------------------
+function renderAccount() {
+  chrome.runtime.sendMessage({ type: "authStatus" }, (res) => {
+    if (chrome.runtime.lastError || !res?.ok) {
+      $("accountWho").textContent = "Extension not ready — reload it";
+      return;
+    }
+    if (res.signedIn) {
+      $("accountWho").textContent = `Signed in as ${res.email || res.name}`;
+      $("accountBtn").textContent = "Sign out";
+      $("accountBtn").onclick = () =>
+        chrome.runtime.sendMessage({ type: "signOut" }, () => renderAccount());
+    } else {
+      $("accountWho").textContent = "Not signed in";
+      $("accountBtn").textContent = "Sign in with Google";
+      $("accountBtn").onclick = () => {
+        $("accountBtn").textContent = "Waiting for Google…";
+        chrome.runtime.sendMessage({ type: "signIn" }, (r) => {
+          if (r && !r.ok && r.error) status(`✗ ${r.error}`, false);
+          renderAccount();
+        });
+      };
+    }
+  });
+}
+renderAccount();
+
+// --- learning languages (saved on change) ------------------------------------
+(async () => {
+  const { miaLangs } = await chrome.storage.local.get("miaLangs");
+  const active = Array.isArray(miaLangs) && miaLangs.length ? miaLangs : ["en"];
+  document.querySelectorAll(".langs input").forEach((cb) => {
+    cb.checked = active.includes(cb.dataset.lang);
+    cb.addEventListener("change", async () => {
+      const picked = [...document.querySelectorAll(".langs input")]
+        .filter((c) => c.checked)
+        .map((c) => c.dataset.lang);
+      if (!picked.length) {
+        cb.checked = true; // at least one language stays on
+        return;
+      }
+      await chrome.storage.local.set({ miaLangs: picked });
+      status("✓ Languages saved");
+    });
+  });
+})();
+
+// --- backend URL --------------------------------------------------------------
 (async () => {
   const { miaBase } = await chrome.storage.local.get("miaBase");
   $("miaBase").value = miaBase || DEFAULT_BASE;
@@ -30,60 +75,40 @@ $("save").addEventListener("click", async () => {
   status("✓ Saved");
 });
 
-$("test").addEventListener("click", async () => {
+$("test").addEventListener("click", () => {
   status("Testing…");
-  try {
-    const res = await fetch(`${await base()}/api/words`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.status);
-    status(`✓ Connected — ${data.words.length} words in the cloud`);
-  } catch (e) {
-    status(`✗ ${e.message || e}`, false);
-  }
+  chrome.runtime.sendMessage({ type: "testCloud" }, (res) => {
+    if (chrome.runtime.lastError) return status("✗ extension not ready", false);
+    if (res?.ok) status(`✓ Connected — ${res.count} words in the cloud`);
+    else status(`✗ ${res?.error || "failed"}`, false);
+  });
 });
 
+// --- manual sync ---------------------------------------------------------------
 $("backfill").addEventListener("click", async () => {
   const words = await localWords();
   if (!words.length) return status("No local words to upload", false);
   status(`Uploading 0/${words.length}…`);
-  const b = await base();
   let ok = 0,
     fail = 0;
   for (const rec of words) {
-    const { id, times_used_in_chat, ...body } = rec;
-    try {
-      const res = await fetch(`${b}/api/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: "syncWord", record: rec }, (res) => {
+        void chrome.runtime.lastError;
+        res?.ok ? ok++ : fail++;
+        resolve();
       });
-      res.ok ? ok++ : fail++;
-    } catch {
-      fail++;
-    }
+    });
     status(`Uploading ${ok + fail}/${words.length}…`);
   }
   status(fail ? `Done: ${ok} uploaded, ${fail} failed` : `✓ All ${ok} words uploaded`, !fail);
 });
 
-$("pull").addEventListener("click", async () => {
+$("pull").addEventListener("click", () => {
   status("Pulling…");
-  try {
-    const res = await fetch(`${await base()}/api/words`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.status);
-    const local = await chrome.storage.local.get(null);
-    let added = 0;
-    for (const w of data.words || []) {
-      const k = "w:" + w.lemma;
-      if (!local[k]) {
-        const { id, ...rec } = w;
-        await chrome.storage.local.set({ [k]: rec });
-        added++;
-      }
-    }
-    status(`✓ Pulled ${added} new word${added === 1 ? "" : "s"}`);
-  } catch (e) {
-    status(`✗ ${e.message || e}`, false);
-  }
+  chrome.runtime.sendMessage({ type: "pullWords" }, (res) => {
+    if (chrome.runtime.lastError) return status("✗ extension not ready", false);
+    if (res?.ok) status(`✓ Pulled ${res.added} new word${res.added === 1 ? "" : "s"}`);
+    else status(`✗ ${res?.error || "failed"}`, false);
+  });
 });
