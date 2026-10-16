@@ -12,8 +12,8 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # Set your team in Xcode (Signing & Capabilities) to run on a device.
-    DEVELOPMENT_TEAM: ""
+    # The AI Debater LLC — publishes Mia on TestFlight / App Store.
+    DEVELOPMENT_TEAM: JBGQGJ6A3C
     CODE_SIGN_STYLE: Automatic
 packages:
   InsForge:
