@@ -43,7 +43,7 @@ struct SettingsView: View {
                     Task {
                         if on, !(await Reminders.requestPermission()) {
                             remindersOn = false
-                            reminderNote = "Notifications are off for Mia. Turn them on in iOS Settings → Mia → Notifications."
+                            reminderNote = "Notifications are off for Lexea. Turn them on in iOS Settings → Lexea → Notifications."
                         } else {
                             reminderNote = nil
                         }
@@ -61,9 +61,9 @@ struct SettingsView: View {
                     }
                 }
                 Section {
-                    Link("Open Mia on the web", destination: Backend.webURL)
+                    Link("Open Lexea on the web", destination: Backend.webURL)
                 } footer: {
-                    Text("To save words on iPhone: select text in Safari (or any app), tap Share, then Save to Mia. If you don't see it, tap More at the end of the app row and turn it on.")
+                    Text("To save words on iPhone: select text in Safari (or any app), tap Share, then Save to Lexea. If you don't see it, tap More at the end of the app row and turn it on.")
                 }
             }
             .navigationTitle("Settings")

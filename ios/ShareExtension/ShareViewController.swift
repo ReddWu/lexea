@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// "Save to Mia" in the share sheet. Pulls the shared text / page URL, lets
+/// "Save to Lexea" in the share sheet. Pulls the shared text / page URL, lets
 /// the user tap the word inside the sentence, and queues it in the App Group.
 /// The app pushes the queue to the backend next time it opens.
 final class ShareViewController: UIViewController {
@@ -102,10 +102,10 @@ struct ShareView: View {
                 }
                 if let error { Text(error).foregroundStyle(.red) }
                 if saved {
-                    Label("Saved. Open Mia to sync.", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                    Label("Saved. Open Lexea to sync.", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                 }
             }
-            .navigationTitle("Save to Mia")
+            .navigationTitle("Save to Lexea")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: finish) }

@@ -12,7 +12,7 @@ struct TutorView: View {
                 transcript
                 inputBar
             }
-            .navigationTitle("Mia")
+            .navigationTitle("Tutor")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .onChange(of: tutor.wordsChanged) { _, _ in

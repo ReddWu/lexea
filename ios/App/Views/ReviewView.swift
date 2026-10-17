@@ -44,7 +44,7 @@ struct ReviewView: View {
                 ContentUnavailableView("Nothing due",
                                        systemImage: "checkmark.seal",
                                        description: Text(store.words.isEmpty
-                                            ? "Save a word from Safari: select it, tap Share, then Save to Mia."
+                                            ? "Save a word from Safari: select it, tap Share, then Save to Lexea."
                                             : "You're all caught up. New cards show up as they come due."))
             } else {
                 Text("\(q.count)").font(.system(size: 64, weight: .bold, design: .rounded))

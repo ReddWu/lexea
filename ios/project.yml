@@ -12,7 +12,7 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # The AI Debater LLC — publishes Mia on TestFlight / App Store.
+    # The AI Debater LLC — publishes Lexea on TestFlight / App Store.
     DEVELOPMENT_TEAM: JBGQGJ6A3C
     CODE_SIGN_STYLE: Automatic
 packages:
@@ -37,7 +37,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Mia
+        CFBundleDisplayName: Lexea
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         CFBundleURLTypes:
@@ -52,7 +52,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.reddwu.mia
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_CFBundleDisplayName: Mia
+        INFOPLIST_KEY_CFBundleDisplayName: Lexea
   MiaShare:
     type: app-extension
     platform: iOS
@@ -68,7 +68,7 @@ targets:
     info:
       path: ShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: Save to Mia
+        CFBundleDisplayName: Save to Lexea
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController

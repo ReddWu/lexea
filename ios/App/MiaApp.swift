@@ -61,7 +61,7 @@ struct MainTabs: View {
             ReviewView()
                 .tabItem { Label("Review", systemImage: "rectangle.on.rectangle.angled") }
             TutorView()
-                .tabItem { Label("Mia", systemImage: "bubble.left.and.text.bubble.right") }
+                .tabItem { Label("Tutor", systemImage: "bubble.left.and.text.bubble.right") }
             WordsView()
                 .tabItem { Label("Words", systemImage: "text.book.closed") }
             SettingsView()
