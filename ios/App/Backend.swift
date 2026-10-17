@@ -10,11 +10,14 @@ enum Backend {
     static let webURL = URL(string: info("MiaWebURL"))!
     static let oauthRedirect = "mia://auth/callback" // listed in ../insforge.toml allowed_redirect_urls
 
+    /// Shared with the SDK so native Sign in with Apple can store the session it gets back.
+    static let sessionStorage = KeychainSessionStorage(service: "com.reddwu.mia.auth")
+
     static let client = InsForgeClient(
         baseURL: baseURL,
         anonKey: anonKey,
         options: InsForgeClientOptions(
-            auth: AuthOptions(storage: KeychainSessionStorage(service: "com.reddwu.mia.auth")),
+            auth: AuthOptions(storage: sessionStorage),
             global: .init(logLevel: .warning, logDestination: .osLog, logSubsystem: "com.reddwu.mia")
         )
     )

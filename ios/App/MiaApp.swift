@@ -24,6 +24,13 @@ struct RootView: View {
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
+        #if DEBUG
+        if Demo.on { return AnyView(MainTabs().task { store.loadDemo(Demo.words) }) }
+        #endif
+        return AnyView(live)
+    }
+
+    private var live: some View {
         Group {
             if session.restoring {
                 ProgressView()
@@ -56,16 +63,26 @@ struct RootView: View {
 }
 
 struct MainTabs: View {
+    #if DEBUG
+    @State private var tab = Demo.tab
+    #else
+    @State private var tab = 0
+    #endif
+
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             ReviewView()
                 .tabItem { Label("Review", systemImage: "rectangle.on.rectangle.angled") }
+                .tag(0)
             TutorView()
                 .tabItem { Label("Tutor", systemImage: "bubble.left.and.text.bubble.right") }
+                .tag(1)
             WordsView()
                 .tabItem { Label("Words", systemImage: "text.book.closed") }
+                .tag(2)
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(3)
         }
     }
 }

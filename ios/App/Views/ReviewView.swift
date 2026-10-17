@@ -23,6 +23,14 @@ struct ReviewView: View {
             }
             .padding()
             .navigationTitle("Review")
+            #if DEBUG
+            .task(id: store.words.count) {
+                if Demo.showCard, !started, !store.words.isEmpty {
+                    begin()
+                    if let c = card { await reveal(c) }
+                }
+            }
+            #endif
             .toolbar {
                 if started && card != nil {
                     ToolbarItem(placement: .topBarTrailing) {

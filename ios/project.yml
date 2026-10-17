@@ -34,6 +34,8 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.reddwu.mia
+        com.apple.developer.applesignin:
+          - Default
     info:
       path: App/Info.plist
       properties:

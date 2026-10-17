@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @Environment(SessionStore.self) private var session
@@ -7,6 +8,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var code = ""
     @State private var busy = false
+    @Environment(\.colorScheme) private var colorScheme
 
     enum Mode: String, CaseIterable { case signIn = "Sign in", signUp = "Create account" }
 
@@ -43,6 +45,15 @@ struct LoginView: View {
 
     private var credentialsForm: some View {
         VStack(spacing: 14) {
+            SignInWithAppleButton(.continue) { session.prepareAppleRequest($0) } onCompletion: { result in
+                busy = true
+                Task { await session.completeApple(result); busy = false }
+            }
+            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+            .frame(height: 50)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .disabled(busy)
+
             Button {
                 busy = true
                 Task { await session.signInWithGoogle(); busy = false }

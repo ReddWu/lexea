@@ -34,6 +34,7 @@
 		B7B35B5F5A31EA5A795E186A /* InsForge in Frameworks */ = {isa = PBXBuildFile; productRef = 0F067E2E3BE0DAFEDC9F59E7 /* InsForge */; };
 		BAEBA742330C5DE872A5093E /* TutorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */; };
 		BDA888F6E810581A67487A65 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D181BF69E0F58651B9BBD89 /* ReviewView.swift */; };
+		C2287A0143A5D9A728665A9F /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C855FCF2F6805A2CEA6BFAE4 /* Demo.swift */; };
 		C30A2147622AC3F850D48463 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */; };
 		C8451C51D251748D2E1BF8DC /* WordRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0539DC348CA34D6FD6DFFA /* WordRecord.swift */; };
 		CD2EFFF15EC114D42D937E05 /* MiaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5D71A6DA599602CBC08388D7 /* MiaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -93,6 +94,7 @@
 		AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mia.entitlements; sourceTree = "<group>"; };
 		BB63F95A2B4243A7E7C10917 /* Definitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Definitions.swift; sourceTree = "<group>"; };
 		C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorView.swift; sourceTree = "<group>"; };
+		C855FCF2F6805A2CEA6BFAE4 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		CA7013D5DB651BA426AF21CD /* MiaShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MiaShare.entitlements; sourceTree = "<group>"; };
 		CBAE8B8D76D2F1B84C5BF0D4 /* PortParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortParityTests.swift; sourceTree = "<group>"; };
 		E5E68DFC81E868324AD2F84C /* Reminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminders.swift; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				33CEFE3746C1F77EBD50B876 /* Assets.xcassets */,
 				7A577DE235E0D905EEF7C458 /* Backend.swift */,
 				BB63F95A2B4243A7E7C10917 /* Definitions.swift */,
+				C855FCF2F6805A2CEA6BFAE4 /* Demo.swift */,
 				0C16FCB44464CC4699EE2E3B /* Info.plist */,
 				264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */,
 				AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */,
@@ -342,6 +345,7 @@
 				61568EEF4D67A136AC23A8E3 /* Backend.swift in Sources */,
 				60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */,
 				6EEE46C89F4D305F3CC28956 /* Definitions.swift in Sources */,
+				C2287A0143A5D9A728665A9F /* Demo.swift in Sources */,
 				619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */,
 				AC7E92FB7C2F6088FF208271 /* Lemma.swift in Sources */,
 				83E90B1F57EFDF91483D7D5A /* LoginView.swift in Sources */,

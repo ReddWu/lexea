@@ -31,6 +31,10 @@ final class WordStore {
         words = []
     }
 
+    #if DEBUG
+    func loadDemo(_ demo: [WordRecord]) { words = demo }
+    #endif
+
     func refresh() async {
         guard userId != nil else { return }
         loading = true

@@ -1,11 +1,11 @@
-export const metadata = { title: "Mia — Privacy Policy" };
+export const metadata = { title: "Lexea (Mia) — Privacy Policy" };
 
 export default function PrivacyPage() {
   return (
     <div className="container" style={{ maxWidth: 680 }}>
       <h1 className="page-title">Privacy Policy</h1>
       <p className="page-sub">
-        For the Mia browser extension and mia-tutor.vercel.app. Last updated July 15, 2026.
+        For the Lexea iPhone app, the Mia browser extension and mia-tutor.vercel.app. Last updated October 17, 2026.
       </p>
 
       <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Mia collects</h2>
@@ -40,6 +40,29 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
+      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>The Lexea iPhone app</h2>
+      <ul style={{ color: "var(--muted)", lineHeight: 1.9, paddingLeft: 22 }}>
+        <li>
+          <b>Account.</b> You sign in with Apple, Google, or an email and password. We store the email
+          address (Apple&apos;s private relay address if you choose to hide yours) and, if provided, your
+          name, only to identify your word library.
+        </li>
+        <li>
+          <b>Saved words.</b> Words you save from the Share sheet or add in the app are stored with the
+          sentence and page title or link they came from, in your private library on our backend
+          (InsForge). Row-level security limits every query to your own account.
+        </li>
+        <li>
+          <b>Tutor chat.</b> Messages you send in the Tutor tab, together with the words you are learning,
+          are sent to our server and to an AI model provider (via OpenRouter) to generate replies. A short
+          learning summary may be kept so the tutor remembers your progress.
+        </li>
+        <li>
+          <b>On your phone.</b> Review reminders are scheduled locally; your sign-in session is kept in the
+          iOS Keychain. The app has no ads, analytics SDKs or tracking.
+        </li>
+      </ul>
+
       <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Mia doesn&apos;t do</h2>
       <ul style={{ color: "var(--muted)", lineHeight: 1.9, paddingLeft: 22 }}>
         <li>No ads, no analytics trackers, no selling or sharing of your data with third parties.</li>
@@ -49,7 +72,8 @@ export default function PrivacyPage() {
 
       <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>Deleting your data</h2>
       <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-        Deleting an expression in the extension or the web app removes it locally and from the backend.
+        In the Lexea app, Settings → Delete account permanently deletes your account and every saved
+        word right away. Deleting an expression in the app, extension or web app removes it locally and from the backend.
         Uninstalling the extension removes all locally stored data. To request full deletion of
         synced data, email{" "}
         <a href="mailto:reddwu02@gmail.com" style={{ color: "var(--green)" }}>

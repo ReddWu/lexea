@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(Reminders.enabledKey) private var remindersOn = false
     @AppStorage(Reminders.minutesKey) private var reminderMinutes = Reminders.defaultMinutes
     @State private var reminderNote: String?
+    @State private var confirmDelete = false
 
     private var reminderTime: Binding<Date> {
         Binding {
@@ -20,9 +21,21 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Account") {
+                Section {
                     LabeledContent("Signed in as", value: session.user?.email ?? "—")
                     Button("Sign out", role: .destructive) { Task { await session.signOut() } }
+                    Button("Delete account", role: .destructive) { confirmDelete = true }
+                        .confirmationDialog("Delete your Lexea account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                            Button("Delete account and all words", role: .destructive) {
+                                Task { await session.deleteAccount() }
+                            }
+                        } message: {
+                            Text("This permanently deletes your account and every saved word on all devices. It can't be undone.")
+                        }
+                } header: {
+                    Text("Account")
+                } footer: {
+                    if let error = session.error { Text(error).foregroundStyle(.red) }
                 }
                 Section {
                     Picker("Default language", selection: $lang) {
