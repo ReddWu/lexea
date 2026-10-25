@@ -1,4 +1,4 @@
-// options.js — Mia extension settings: account, learning languages, backend
+// options.js — Echowords extension settings: account, learning languages, backend
 // URL + manual sync helpers. All cloud calls go through the background service
 // worker, which owns the auth token.
 const $ = (id) => document.getElementById(id);

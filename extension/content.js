@@ -1,5 +1,5 @@
 // content.js — capture words on selection. Works alongside Trancy: selecting a
-// word triggers Trancy's popup AND shows a "Save to Mia" button. Clicking it
+// word triggers Trancy's popup AND shows a "Save to Echowords" button. Clicking it
 // saves the word (with its sentence) and pops a small card: phonetic +
 // plain-English explanation + a button that reveals the 中文 translation.
 (() => {
@@ -108,7 +108,7 @@
 
   const btn = document.createElement("button");
   btn.id = BTN_ID;
-  btn.textContent = "★ Save to Mia";
+  btn.textContent = "★ Save to Echowords";
   document.documentElement.appendChild(btn);
 
   const toast = document.createElement("div");
@@ -238,24 +238,24 @@
 
   // sendMessage throws "Extension context invalidated" from content scripts
   // that outlive an extension reload — catch it and ask for a page refresh.
-  function sendToMia(msg, cb) {
+  function sendToEchowords(msg, cb) {
     try {
       chrome.runtime.sendMessage(msg, (res) => {
         if (chrome.runtime.lastError) {
-          showToast("Mia was updated — refresh this page", true);
+          showToast("Echowords was updated — refresh this page", true);
           cb && cb(null);
           return;
         }
         cb && cb(res);
       });
     } catch (_e) {
-      showToast("Mia was updated — refresh this page", true);
+      showToast("Echowords was updated — refresh this page", true);
       cb && cb(null);
     }
   }
 
   function save(payload, cb) {
-    sendToMia({ type: "capture", payload }, (res) => {
+    sendToEchowords({ type: "capture", payload }, (res) => {
       if (res && res.ok) cb && cb();
       else if (res) showToast("Save failed: " + (res.error || "unknown error"), true);
     });
@@ -330,22 +330,22 @@
       // English meaning when the backend can't help (signed out, LLM down):
       // the free online dictionary, which has a short timeout of its own.
       const fallbackToDict = () =>
-        sendToMia({ type: "dictdef", payload }, (res) => {
+        sendToEchowords({ type: "dictdef", payload }, (res) => {
           if (stale()) return;
           if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
           if (cardPlain.className.includes("loading")) setPlain(res && res.dictDef ? res.dictDef : "Saved.");
         });
       // stage 1 (~0ms): bundled dictionaries — phonetic + 中文, instantly.
-      sendToMia({ type: "phonetic", payload }, (res) => {
+      sendToEchowords({ type: "phonetic", payload }, (res) => {
         if (stale()) return;
         if (res && res.phonetic && !cardPhon.textContent) cardPhon.textContent = res.phonetic;
         if (res && res.zh) cardZhText = res.zh;
         // stage 2 (~1-2s): one LLM call for the plain-English meaning of the
         // exact sense in this sentence (plus 中文 when the dictionary missed)
-        sendToMia({ type: "define", payload }, (llm) => {
+        sendToEchowords({ type: "define", payload }, (llm) => {
           if (stale()) return;
           if (llm && llm.needsAuth) {
-            showToast("Sign in to Mia (extension icon → Sign in) for AI definitions & sync", true);
+            showToast("Sign in to Echowords (extension icon → Sign in) for AI definitions & sync", true);
           }
           if (!llm || !llm.ok || !llm.plain) return fallbackToDict();
           if (llm.phonetic && !cardPhon.textContent) cardPhon.textContent = llm.phonetic;

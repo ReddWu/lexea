@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Mia — Save words while you read",
-  "version": "0.3.3",
-  "description": "Select a word or phrase on any page — Mia saves it with its sentence, explains it, and tutors you on it later.",
+  "name": "Echowords — Save words while you read",
+  "version": "0.3.4",
+  "description": "Select a word or phrase on any page — Echowords saves it with its sentence, explains it, and tutors you on it later.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -20,7 +20,7 @@
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Mia vocabulary",
+    "default_title": "Echowords vocabulary",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

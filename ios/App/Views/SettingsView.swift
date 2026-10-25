@@ -25,7 +25,7 @@ struct SettingsView: View {
                     LabeledContent("Signed in as", value: session.user?.email ?? "—")
                     Button("Sign out", role: .destructive) { Task { await session.signOut() } }
                     Button("Delete account", role: .destructive) { confirmDelete = true }
-                        .confirmationDialog("Delete your Lexea account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                        .confirmationDialog("Delete your Echowords account?", isPresented: $confirmDelete, titleVisibility: .visible) {
                             Button("Delete account and all words", role: .destructive) {
                                 Task { await session.deleteAccount() }
                             }
@@ -56,7 +56,7 @@ struct SettingsView: View {
                     Task {
                         if on, !(await Reminders.requestPermission()) {
                             remindersOn = false
-                            reminderNote = "Notifications are off for Lexea. Turn them on in iOS Settings → Lexea → Notifications."
+                            reminderNote = "Notifications are off for Echowords. Turn them on in iOS Settings → Echowords → Notifications."
                         } else {
                             reminderNote = nil
                         }
@@ -74,9 +74,9 @@ struct SettingsView: View {
                     }
                 }
                 Section {
-                    Link("Open Lexea on the web", destination: Backend.webURL)
+                    Link("Open Echowords on the web", destination: Backend.webURL)
                 } footer: {
-                    Text("To save words on iPhone: select text in Safari (or any app), tap Share, then Save to Lexea. If you don't see it, tap More at the end of the app row and turn it on.")
+                    Text("To save words on iPhone: select text in Safari (or any app), tap Share, then Save to Echowords. If you don't see it, tap More at the end of the app row and turn it on.")
                 }
             }
             .navigationTitle("Settings")

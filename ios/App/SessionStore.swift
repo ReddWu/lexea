@@ -84,12 +84,12 @@ final class SessionStore {
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
             let msg = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
-            throw NSError(domain: "Lexea", code: 1, userInfo: [NSLocalizedDescriptionKey: msg ?? "Sign in with Apple failed."])
+            throw NSError(domain: "Echowords", code: 1, userInfo: [NSLocalizedDescriptionKey: msg ?? "Sign in with Apple failed."])
         }
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = iso8601WithFractionalSecondsDecodingStrategy()
         let res = try dec.decode(AuthResponse.self, from: data)
-        guard let access = res.accessToken else { throw NSError(domain: "Lexea", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sign in with Apple failed."]) }
+        guard let access = res.accessToken else { throw NSError(domain: "Echowords", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sign in with Apple failed."]) }
         try await Backend.sessionStorage.saveSession(Session(accessToken: access, refreshToken: res.refreshToken, user: res.user))
         // getSession() loads the stored session into the SDK and switches its auth headers
         user = try await auth.getSession()?.user

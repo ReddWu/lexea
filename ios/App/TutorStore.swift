@@ -182,7 +182,7 @@ final class TutorStore {
         var errorDescription: String? {
             switch self {
             case .signedOut: return "Sign in first."
-            case .server(401, _): return "Lexea's server didn't accept your sign-in. The website backend may still point at the old project."
+            case .server(401, _): return "Echowords's server didn't accept your sign-in. The website backend may still point at the old project."
             case .server(let code, let msg): return "The tutor couldn't answer (\(code)): \(msg.prefix(160))"
             }
         }

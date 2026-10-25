@@ -1,8 +1,8 @@
-# Lexea — the words you save show up in your AI chats
+# Echowords — the words you save show up in your AI chats
 
 > *中文说明见下方 [中文](#中文).*
 
-**Most vocab apps end at a flashcard. Lexea closes the loop with the AI you already talk to every day.**
+**Most vocab apps end at a flashcard. Echowords closes the loop with the AI you already talk to every day.**
 
 You highlight a word while reading → it's saved with the *sentence it came from* → you review it on a forgetting-curve schedule → and then your **ChatGPT naturally uses your words back at you in everyday conversation, leaning harder on the ones you keep forgetting.**
 
@@ -30,13 +30,13 @@ That's it — capture, review, and export all work offline with no account. Clou
 - Selecting a **phrase** shows a "★ save" button instead (avoids saving whole sentences).
 - Click the extension icon to **review**, **delete** words, **copy weak words for ChatGPT**, or **export CSV/JSON**.
 
-> Chrome isolates extensions, so Lexea can't read Trancy's internal saves — it listens to *your selection* independently. Dupes are de-duplicated; prune unwanted words with the ✕ button.
+> Chrome isolates extensions, so Echowords can't read Trancy's internal saves — it listens to *your selection* independently. Dupes are de-duplicated; prune unwanted words with the ✕ button.
 
 ---
 
 ## Optional: cloud sync, review website, AI
 
-These need a free backend (your own — Lexea ships **no keys or hosts**, everything is your own env var / secret). Full setup in [Self-hosting](#self-hosting).
+These need a free backend (your own — Echowords ships **no keys or hosts**, everything is your own env var / secret). Full setup in [Self-hosting](#self-hosting).
 
 - **Cloud sync** ([InsForge](https://insforge.dev), free): mirror saves to your own `words` table so the website and ChatGPT can read them. Extension → Options → ② Cloud sync.
 - **Review website** ([`web/`](web/), Next.js → Vercel): cross-device dashboard (due/stats/7-day schedule/word management) + SM-2 review. See [`web/README.md`](web/README.md).
@@ -126,7 +126,7 @@ Then follow [`chatgpt/README.md`](chatgpt/README.md) (Custom GPT, Action importe
 <a name="中文"></a>
 ## 中文
 
-**大多数背单词工具止步于一张闪卡;Lexea 把它和你每天都在用的 AI 接成一个闭环。**
+**大多数背单词工具止步于一张闪卡;Echowords 把它和你每天都在用的 AI 接成一个闭环。**
 
 阅读时划词 → 连同**所在原句**一起存下 → 按**遗忘曲线**复习 → 然后你的 **ChatGPT 会在日常聊天里自然地用回这些词,而且你越记不牢的词出现得越多。**
 

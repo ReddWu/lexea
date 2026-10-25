@@ -1,4 +1,4 @@
-# Mia — Chrome Web Store 提交材料
+# Echowords — Chrome Web Store 提交材料
 
 ## 上传文件
 - 扩展包：`dist/mia-store-v0.3.1-cws.zip`（已去掉 localhost 权限）
@@ -7,22 +7,22 @@
 
 ## 商店文案（Store listing 页）
 
-**Name**: Mia — Save words while you read
+**Name**: Echowords — Save words while you read
 
 **Summary (132 字符内)**:
-Select a word on any page — Mia saves it with its sentence, shows a plain-English meaning + 中文, and tutors you on it later.
+Select a word on any page — Echowords saves it with its sentence, shows a plain-English meaning + 中文, and tutors you on it later.
 
 **Description**:
-Mia turns every page you read into vocabulary practice.
+Echowords turns every page you read into vocabulary practice.
 
-Select any English word → click "★ Save to Mia". A card pops up instantly with:
+Select any English word → click "★ Save to Echowords". A card pops up instantly with:
 • The phonetic transcription (IPA), from a 126k-word dictionary bundled inside the extension
 • A plain-English explanation of the exact sense used in YOUR sentence
 • 中文释义 on demand
 
-Every word is saved together with the sentence you found it in, so you never review a word stripped of context. Your library syncs to the Mia web app, where flashcards are scheduled on your forgetting curve and saved words are woven back into natural AI tutoring conversations.
+Every word is saved together with the sentence you found it in, so you never review a word stripped of context. Your library syncs to the Echowords web app, where flashcards are scheduled on your forgetting curve and saved words are woven back into natural AI tutoring conversations.
 
-Local-first: lookups run on-device from bundled dictionaries; your data stays in your browser's storage and syncs only to your Mia library.
+Local-first: lookups run on-device from bundled dictionaries; your data stays in your browser's storage and syncs only to your Echowords library.
 
 **Category**: Education
 **Language**: English
@@ -36,7 +36,7 @@ Save vocabulary words (with their source sentence) that the user explicitly sele
 - `storage` / `unlimitedStorage`: 保存用户收藏的单词和两个内置词典缓存（约 7MB），必须超过默认配额
 - Content script on `<all_urls>`: 用户可能在任何网站上阅读并选词；只在用户主动选中文本并点击保存按钮时才读取所选单词及其句子，不读取其他页面内容
 - `identity`: Google 登录（chrome.identity.launchWebAuthFlow 走 OAuth，插件本身不接触密码）
-- Host `mia-tutor.vercel.app`: 同步用户的单词库到 Mia 后端（按账号隔离）
+- Host `mia-tutor.vercel.app`: 同步用户的单词库到 Echowords 后端（按账号隔离）
 - Host `kv54z32g.us-east.insforge.app`: 认证服务（Google OAuth 换取/刷新会话 token）
 - Host `api.dictionaryapi.dev`: 查询单词音标和释义（只发送单词本身）
 

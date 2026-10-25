@@ -12,7 +12,7 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # The AI Debater LLC — publishes Lexea on TestFlight / App Store.
+    # The AI Debater LLC — publishes Echowords on TestFlight / App Store.
     DEVELOPMENT_TEAM: JBGQGJ6A3C
     CODE_SIGN_STYLE: Automatic
 packages:
@@ -39,7 +39,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Lexea
+        CFBundleDisplayName: Echowords
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         CFBundleURLTypes:
@@ -56,7 +56,7 @@ targets:
         # iPhone only (portrait UI); an iPad build would have to support every orientation
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_CFBundleDisplayName: Lexea
+        INFOPLIST_KEY_CFBundleDisplayName: Echowords
   MiaShare:
     type: app-extension
     platform: iOS
@@ -72,7 +72,7 @@ targets:
     info:
       path: ShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: Save to Lexea
+        CFBundleDisplayName: Save to Echowords
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController

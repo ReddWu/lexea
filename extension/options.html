@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Mia · Settings</title>
+  <title>Echowords · Settings</title>
   <style>
     :root{--ink:#242424;--muted:#6b6b6b;--line:#e6e6e6;--green:#1a8917;--green-dark:#156d12;--serif:"Charter","Georgia",serif;}
     body{font:14px/1.6 -apple-system,system-ui,sans-serif;max-width:560px;margin:48px auto;padding:0 20px;color:var(--ink);}
@@ -26,10 +26,10 @@
   </style>
 </head>
 <body>
-  <h1>Mia · Settings</h1>
+  <h1>Echowords · Settings</h1>
   <p class="hint">
     Words are saved in your browser first (local-first). Sign in with Google to sync them to
-    your Mia library — tutor, flashcards and dashboard all see them.
+    your Echowords library — tutor, flashcards and dashboard all see them.
   </p>
 
   <h2>Account</h2>
@@ -38,7 +38,7 @@
       <span id="accountWho">Checking…</span>
       <button id="accountBtn" style="margin-top:0;">Sign in with Google</button>
     </div>
-    <div class="hint">Signing in enables cloud sync and AI definitions. Without it, Mia still saves words locally.</div>
+    <div class="hint">Signing in enables cloud sync and AI definitions. Without it, Echowords still saves words locally.</div>
   </div>
 
   <h2>Learning languages</h2>
@@ -50,12 +50,12 @@
       <label><input type="checkbox" data-lang="fr" /> Français</label>
       <label><input type="checkbox" data-lang="ja" /> 日本語</label>
     </div>
-    <div class="hint">Mia offers to save words and short phrases in the languages you pick. Spanish expressions may include punctuation such as ¿…? and ¡…!</div>
+    <div class="hint">Echowords offers to save words and short phrases in the languages you pick. Spanish expressions may include punctuation such as ¿…? and ¡…!</div>
   </div>
 
   <h2>Backend</h2>
   <div class="card">
-    <label>Mia backend URL</label>
+    <label>Echowords backend URL</label>
     <input type="url" id="miaBase" placeholder="https://mia-tutor.vercel.app" />
     <div class="hint">Default is the hosted app. Point it at <code>http://localhost:3002</code> for local development.</div>
     <button id="test" class="alt" style="margin-left:0;">Test connection</button>
@@ -66,7 +66,7 @@
     <button id="backfill" style="margin-top:0;">⬆ Upload all local words to the backend</button>
     <div class="hint">New words sync automatically as you save them; this pushes everything already stored locally.</div>
     <button id="pull" style="margin-top:14px;">⬇ Pull words from the backend</button>
-    <div class="hint">Fetches words that exist in the cloud but not in this browser (e.g. saved by Mia in chat). Never overwrites local words.</div>
+    <div class="hint">Fetches words that exist in the cloud but not in this browser (e.g. saved by Echowords in chat). Never overwrites local words.</div>
   </div>
 
   <div><button id="save">Save settings</button></div>

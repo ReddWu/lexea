@@ -1,6 +1,6 @@
-# Lexea 一个月变现方案(含市场调研)
+# Echowords 一个月变现方案(含市场调研)
 
-> 2026-07-07 · 目标:30 天内验证"有人愿意为 Lexea 付钱",而不是做完美产品。
+> 2026-07-07 · 目标:30 天内验证"有人愿意为 Echowords 付钱",而不是做完美产品。
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 竞品格局
 
-| 产品 | 做什么 | 定价 | 与 Lexea 的关系 |
+| 产品 | 做什么 | 定价 | 与 Echowords 的关系 |
 |---|---|---|---|
 | [Trancy](https://www.trancy.org/pricing) | 双语字幕+划词翻译+生词本+SRS 闪卡+AI 例句+Anki 同步,30 万+ 用户,Chrome 4.7 星 | 免费档 + Premium $3.49–5.99/月($27.99/年) | 采集+SRS 与你完全重叠;无开放 API |
 | [Language Reactor](https://www.languagereactor.com/pro-mode) | Netflix/YouTube 学习,词库+CSV 导出 | Pro $5/月($28/年) | 产品停滞(roadmap 2022 年后未更新),用户在流失 |
@@ -16,7 +16,7 @@
 | [Langua](https://languatalk.com/try-langua) | AI 口语教练,会把你存的词织进它自己的 AI 对话和故事 | 订阅制 | **最接近你的差异点**,但只在它自己的 App 内 |
 | [墨墨背单词](https://www.maimemo.com/shop) | 国内 SRS 背单词,卖"单词上限"(600 免费,8–163 元加量) | 买断式加量 | 证明中文用户愿为"记住单词"付钱,且接受非订阅模式 |
 
-**结论 1:采集 + SRS 是红海,零溢价。** Trancy 一家就把这层做完了。Lexea 唯一值钱的是闭环最后一步:**你的弱词流进你日常用的 AI,越记不牢出现越多**。目前没有跨平台产品做这层(Langua 只在自家 App 内做)。
+**结论 1:采集 + SRS 是红海,零溢价。** Trancy 一家就把这层做完了。Echowords 唯一值钱的是闭环最后一步:**你的弱词流进你日常用的 AI,越记不牢出现越多**。目前没有跨平台产品做这层(Langua 只在自家 App 内做)。
 
 **结论 2:不要做"依托 Trancy"的产品。** 理由:
 - Trancy 无开放 API/插件生态。你只是监听浏览器划词事件,它改交互你就失配,且拿不到任何官方分发;
@@ -25,14 +25,14 @@
 
 **正确姿势:兼容不依附。** 定位语从"配合 Trancy"改成"**配合你正在用的任何阅读/翻译工具**——Trancy、沉浸式翻译、Relingo 都行,词库归你,AI 里见"。Trancy/沉浸式翻译用户社区只是获客渠道,不是产品地基。
 
-**结论 3:不做 GPTs 是对的,MCP 是现成的替代。** 截至 2026 年 4 月,[ChatGPT(Plus 及以上)、Claude、Perplexity、Grok、Le Chat 均支持 MCP 连接器](https://truthifi.com/education/mcp-connection-guide)。一个 Lexea MCP server 同时服务所有主流 AI:
+**结论 3:不做 GPTs 是对的,MCP 是现成的替代。** 截至 2026 年 4 月,[ChatGPT(Plus 及以上)、Claude、Perplexity、Grok、Le Chat 均支持 MCP 连接器](https://truthifi.com/education/mcp-connection-guide)。一个 Echowords MCP server 同时服务所有主流 AI:
 - 对冲平台风险(ChatGPT 记忆功能再强,也不会跨到 Claude/Grok);
 - "数据归你、词库跟着你去任何 AI"成为真护城河;
 - 免费兜底方案保留"一键复制弱词 → 粘贴进 Custom Instructions"。
 
 ### 定价锚点
 
-同类订阅集中在 **$3–6/月、$28/年**;墨墨证明买断/加量制在中文市场可行。Lexea 服务端成本(托管同步 + MCP + AI 释义)与订阅天然对齐。
+同类订阅集中在 **$3–6/月、$28/年**;墨墨证明买断/加量制在中文市场可行。Echowords 服务端成本(托管同步 + MCP + AI 释义)与订阅天然对齐。
 
 ---
 

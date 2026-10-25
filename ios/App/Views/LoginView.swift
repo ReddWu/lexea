@@ -16,7 +16,7 @@ struct LoginView: View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 10) {
-                    Text("Lexea")
+                    Text("Echowords")
                         .font(.system(size: 56, weight: .bold, design: .serif))
                     Text("Save words where you read them.\nReview them before you forget.")
                         .multilineTextAlignment(.center)

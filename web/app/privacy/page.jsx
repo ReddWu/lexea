@@ -1,11 +1,11 @@
-export const metadata = { title: "Lexea (Mia) — Privacy Policy" };
+export const metadata = { title: "Echowords (Mia) — Privacy Policy" };
 
 export default function PrivacyPage() {
   return (
     <div className="container" style={{ maxWidth: 680 }}>
       <h1 className="page-title">Privacy Policy</h1>
       <p className="page-sub">
-        For the Lexea iPhone app, the Mia browser extension and mia-tutor.vercel.app. Last updated October 17, 2026.
+        For the Echowords iPhone app, the Mia browser extension and mia-tutor.vercel.app. Last updated October 17, 2026.
       </p>
 
       <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Mia collects</h2>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>The Lexea iPhone app</h2>
+      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>The Echowords iPhone app</h2>
       <ul style={{ color: "var(--muted)", lineHeight: 1.9, paddingLeft: 22 }}>
         <li>
           <b>Account.</b> You sign in with Apple, Google, or an email and password. We store the email
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>Deleting your data</h2>
       <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-        In the Lexea app, Settings → Delete account permanently deletes your account and every saved
+        In the Echowords app, Settings → Delete account permanently deletes your account and every saved
         word right away. Deleting an expression in the app, extension or web app removes it locally and from the backend.
         Uninstalling the extension removes all locally stored data. To request full deletion of
         synced data, email{" "}

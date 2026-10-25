@@ -1,13 +1,13 @@
 // background.js — local-first store. Words live in chrome.storage.local
 // (one key per word: "w:<lemma>" for English, "w:<lang>:<lemma>" otherwise).
-// Each capture is ALSO mirrored through the Mia backend (Next.js → InsForge)
+// Each capture is ALSO mirrored through the Echowords backend (Next.js → InsForge)
 // when the user is signed in — best-effort, non-blocking, no keys in the
 // extension. Override the backend base URL via chrome.storage `miaBase`.
 
 const KEY = (lemma, lang) => (!lang || lang === "en" ? "w:" + lemma : `w:${lang}:${lemma}`);
 const nowISO = () => new Date().toISOString();
 const DEFAULT_MIA_BASE = "https://mia-tutor.vercel.app"; // set chrome.storage `miaBase` to http://localhost:3002 for local dev
-const INSFORGE_HOST = "https://kv54z32g.us-east.insforge.app"; // auth only; data flows through the Mia backend
+const INSFORGE_HOST = "https://kv54z32g.us-east.insforge.app"; // auth only; data flows through the Echowords backend
 
 async function miaBase() {
   const { miaBase } = await chrome.storage.local.get("miaBase");
@@ -279,7 +279,7 @@ async function saveLocal(p) {
   return rec;
 }
 
-// Mirror the locally-merged record through the Mia backend (upsert on lemma).
+// Mirror the locally-merged record through the Echowords backend (upsert on lemma).
 // We never send `id` (DB-generated) or `times_used_in_chat` (owned by the agent).
 function cloudBody(rec) {
   const { id, times_used_in_chat, ...rest } = rec;
@@ -317,9 +317,9 @@ async function deleteCloud(lemma, lang) {
   }
 }
 
-// --- word info for the "Save to Mia" card -------------------------------
+// --- word info for the "Save to Echowords" card -------------------------------
 // English merges three sources: bundled IPA + ECDICT (instant, offline),
-// Datamuse (fallback), and the Mia backend /api/define (LLM).
+// Datamuse (fallback), and the Echowords backend /api/define (LLM).
 // Other languages go straight to /api/define, which returns a reading
 // (pinyin / kana / IPA) alongside the explanation.
 let ipaMapPromise = null;
