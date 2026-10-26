@@ -110,7 +110,10 @@ function renderAuth() {
       $("authAction").textContent = "Sign in";
       $("authAction").onclick = () => {
         $("authAction").textContent = "…";
-        chrome.runtime.sendMessage({ type: "signIn" }, () => renderAuth());
+        chrome.runtime.sendMessage({ type: "signIn" }, async () => {
+          renderAuth();
+          render(await allWords());
+        });
       };
     }
   });
@@ -120,6 +123,16 @@ function renderAuth() {
   const words = await allWords();
   render(words);
   renderAuth();
+
+  // signed in but nothing local (fresh install / cleared storage) — pull the cloud library
+  if (!words.length) {
+    chrome.runtime.sendMessage({ type: "authStatus" }, (res) => {
+      if (chrome.runtime.lastError || !res?.signedIn) return;
+      chrome.runtime.sendMessage({ type: "pullWords" }, async (r) => {
+        if (!chrome.runtime.lastError && r?.added) render(await allWords());
+      });
+    });
+  }
 
   // due-now count for the review button
   const t = Date.now();

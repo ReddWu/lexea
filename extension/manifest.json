@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Echowords — Save words while you read",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Select a word or phrase on any page — Echowords saves it with its sentence, explains it, and tutors you on it later.",
   "icons": {
     "16": "icons/icon16.png",

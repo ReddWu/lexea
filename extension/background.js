@@ -462,8 +462,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg?.type === "signIn") {
+    // merge with the cloud library right away: pull so a fresh install isn't
+    // empty, push what was saved while signed out
     signIn()
-      .then((s) => sendResponse({ ok: true, email: s.email, name: s.name }))
+      .then(async (s) => {
+        const pulled = await pullCloudWords().catch(() => null);
+        if (pulled?.ok) await pushLocalOnly(pulled.cloudKeys).catch(() => {});
+        sendResponse({ ok: true, email: s.email, name: s.name });
+      })
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
@@ -552,24 +558,42 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   // options page: pull cloud words that don't exist locally (never overwrites)
   if (msg?.type === "pullWords") {
-    (async () => {
-      const base = await miaBase();
-      const res = await authFetch(`${base}/api/words`);
-      if (!res) return sendResponse({ ok: false, error: "not signed in" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return sendResponse({ ok: false, error: data.error || `HTTP ${res.status}` });
-      const local = await chrome.storage.local.get(null);
-      let added = 0;
-      for (const w of data.words || []) {
-        const k = KEY(w.lemma, w.lang || "en");
-        if (!local[k]) {
-          const { id, user_id, ...rec } = w;
-          await chrome.storage.local.set({ [k]: rec });
-          added++;
-        }
-      }
-      sendResponse({ ok: true, added });
-    })().catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
+    pullCloudWords()
+      .then(({ cloudKeys, ...r }) => sendResponse(r))
+      .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
 });
+
+// Copy cloud words that don't exist locally into storage (never overwrites).
+async function pullCloudWords() {
+  const base = await miaBase();
+  const res = await authFetch(`${base}/api/words`);
+  if (!res) return { ok: false, error: "not signed in" };
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, error: data.error || `HTTP ${res.status}` };
+  const local = await chrome.storage.local.get(null);
+  const fresh = {};
+  for (const w of data.words || []) {
+    const k = KEY(w.lemma, w.lang || "en");
+    if (!local[k]) {
+      const { id, user_id, ...rec } = w;
+      fresh[k] = rec;
+    }
+  }
+  await chrome.storage.local.set(fresh);
+  return { ok: true, added: Object.keys(fresh).length, cloudKeys: new Set((data.words || []).map((w) => KEY(w.lemma, w.lang || "en"))) };
+}
+
+// Upload words saved while signed out (local-only) once the user signs in.
+// Only run at sign-in: doing it on every sync would resurrect words the user
+// deleted on the web or iOS.
+async function pushLocalOnly(cloudKeys) {
+  const local = await chrome.storage.local.get(null);
+  let pushed = 0;
+  for (const [k, rec] of Object.entries(local)) {
+    if (!k.startsWith("w:") || cloudKeys.has(k)) continue;
+    if ((await pushCloud(rec)).ok) pushed++;
+  }
+  return pushed;
+}

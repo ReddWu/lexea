@@ -40,3 +40,4 @@ ios/build/
 
 # packaged builds (rebuild from extension/)
 dist/*.zip
+supabase/.temp/

@@ -1,7 +1,7 @@
 # Echowords — Chrome Web Store 提交材料
 
 ## 上传文件
-- 扩展包：`dist/mia-store-v0.3.1-cws.zip`（已去掉 localhost 权限）
+- 扩展包：`dist/echowords-store-v0.3.4-cws.zip`（已去掉 key 和 localhost 权限；商店已有此 item，更新包不需要 key.pem）
 - 商店图标 128×128：`dist/store-assets/store-icon-128.png`
 - 截图 1280×800：`dist/store-assets/screenshot1.png`
 
@@ -37,8 +37,7 @@ Save vocabulary words (with their source sentence) that the user explicitly sele
 - Content script on `<all_urls>`: 用户可能在任何网站上阅读并选词；只在用户主动选中文本并点击保存按钮时才读取所选单词及其句子，不读取其他页面内容
 - `identity`: Google 登录（chrome.identity.launchWebAuthFlow 走 OAuth，插件本身不接触密码）
 - Host `mia-tutor.vercel.app`: 同步用户的单词库到 Echowords 后端（按账号隔离）
-- Host `kv54z32g.us-east.insforge.app`: 认证服务（Google OAuth 换取/刷新会话 token）
-- Host `api.dictionaryapi.dev`: 查询单词音标和释义（只发送单词本身）
+- Host `mpuzorimmmcgpjgbekkx.supabase.co`: 认证服务（Supabase Auth：Google OAuth 换取/刷新会话 token）
 
 **Data usage disclosure（勾选项）**:
 - 收集的数据类型：勾选 "Website content"（用户选中的文字、页面 URL 和标题）和 "Personally identifiable information"（Google 登录的邮箱/姓名/头像）；"Web history" 不勾
@@ -71,3 +70,8 @@ Save vocabulary words (with their source sentence) that the user explicitly sele
 - 展示保留原标点，去重时忽略外围标点（`¿Qué tal?` 与 `qué tal` 是同一张卡）
 - 西语短语按整体语境生成简单英文释义、中文释义和 IPA
 - 网页版与扩展复习均使用西语发音，缺失释义会自动补齐
+
+## 更新（v0.3.4，2026-10-26）
+- 产品更名 Echowords（原 Mia）
+- 后端从 InsForge 迁到 Supabase（host 权限 kv54z32g.us-east.insforge.app → mpuzorimmmcgpjgbekkx.supabase.co）
+- 登录后自动从云端拉取单词库
