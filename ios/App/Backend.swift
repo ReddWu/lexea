@@ -1,25 +1,19 @@
 import Foundation
-import InsForge
-import InsForgeAuth
+import Supabase
 
-/// The InsForge client, built from Info.plist values that come from
-/// Config/Secrets.xcconfig (never hardcoded).
+/// The Supabase client, built from Info.plist values that come from
+/// Config/Secrets.xcconfig (never hardcoded). The SDK keeps the session in
+/// the Keychain by default.
 enum Backend {
-    static let baseURL = URL(string: info("InsForgeURL"))!
-    static let anonKey = info("InsForgeAnonKey")
+    static let baseURL = URL(string: info("SupabaseURL"))!
+    static let publishableKey = info("SupabaseKey")
     static let webURL = URL(string: info("MiaWebURL"))!
-    static let oauthRedirect = "mia://auth/callback" // listed in ../insforge.toml allowed_redirect_urls
+    static let oauthRedirect = URL(string: "mia://auth/callback")! // in the Supabase auth redirect allow list
 
-    /// Shared with the SDK so native Sign in with Apple can store the session it gets back.
-    static let sessionStorage = KeychainSessionStorage(service: "com.reddwu.mia.auth")
-
-    static let client = InsForgeClient(
-        baseURL: baseURL,
-        anonKey: anonKey,
-        options: InsForgeClientOptions(
-            auth: AuthOptions(storage: sessionStorage),
-            global: .init(logLevel: .warning, logDestination: .osLog, logSubsystem: "com.reddwu.mia")
-        )
+    static let client = SupabaseClient(
+        supabaseURL: baseURL,
+        supabaseKey: publishableKey,
+        options: SupabaseClientOptions(auth: .init(redirectToURL: oauthRedirect, flowType: .pkce))
     )
 
     private static func info(_ key: String) -> String {

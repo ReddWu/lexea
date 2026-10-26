@@ -17,7 +17,6 @@
 		601DDAD3B0E380EA1B5D4652 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C3AB191DFA54B58F09DBE0 /* Speech.swift */; };
 		60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
 		61568EEF4D67A136AC23A8E3 /* Backend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A577DE235E0D905EEF7C458 /* Backend.swift */; };
-		619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */; };
 		6EEE46C89F4D305F3CC28956 /* Definitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB63F95A2B4243A7E7C10917 /* Definitions.swift */; };
 		83E90B1F57EFDF91483D7D5A /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C01D2B5B0B9B15F9310DC59 /* LoginView.swift */; };
 		86389984E21BD63A334CC9C2 /* MiaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22D2635D341A1376DEF7BEF /* MiaApp.swift */; };
@@ -31,7 +30,7 @@
 		AD61A18CE96095A1F5934A0E /* RemindersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE945F66B48FCBC5DBB65EF /* RemindersTests.swift */; };
 		B4CB629653CA2A44B6FDAD02 /* Lemma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F702AF913809E47250604A /* Lemma.swift */; };
 		B6D1BE45A48D9AA9D53B4863 /* CaptureQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */; };
-		B7B35B5F5A31EA5A795E186A /* InsForge in Frameworks */ = {isa = PBXBuildFile; productRef = 0F067E2E3BE0DAFEDC9F59E7 /* InsForge */; };
+		B7B35B5F5A31EA5A795E186A /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 5199272A238E98A00F52CD13 /* Supabase */; };
 		BAEBA742330C5DE872A5093E /* TutorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7EEDEB81EA4FC4C50BACB9A /* TutorView.swift */; };
 		BDA888F6E810581A67487A65 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D181BF69E0F58651B9BBD89 /* ReviewView.swift */; };
 		C2287A0143A5D9A728665A9F /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C855FCF2F6805A2CEA6BFAE4 /* Demo.swift */; };
@@ -75,7 +74,6 @@
 		1BDEE370A91BA55078665435 /* Mia.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Mia.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C01D2B5B0B9B15F9310DC59 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		264BF67FE170AAC16F0CB20A /* CaptureQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureQueue.swift; sourceTree = "<group>"; };
-		264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainSessionStorage.swift; sourceTree = "<group>"; };
 		2BFD1B69C615C0DC2ACA8253 /* TutorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStore.swift; sourceTree = "<group>"; };
 		2F652FF804A37F74D38AAE62 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		30CA0CDD7D16D3053EDE3524 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -107,7 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B7B35B5F5A31EA5A795E186A /* InsForge in Frameworks */,
+				B7B35B5F5A31EA5A795E186A /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,7 +184,6 @@
 				BB63F95A2B4243A7E7C10917 /* Definitions.swift */,
 				C855FCF2F6805A2CEA6BFAE4 /* Demo.swift */,
 				0C16FCB44464CC4699EE2E3B /* Info.plist */,
-				264D9923DEE247203CC05495 /* KeychainSessionStorage.swift */,
 				AACDDDF2F2948CF6145BCB9D /* Mia.entitlements */,
 				A22D2635D341A1376DEF7BEF /* MiaApp.swift */,
 				AA905CCEB71E247A16463CFA /* SessionStore.swift */,
@@ -226,7 +223,7 @@
 			);
 			name = Mia;
 			packageProductDependencies = (
-				0F067E2E3BE0DAFEDC9F59E7 /* InsForge */,
+				5199272A238E98A00F52CD13 /* Supabase */,
 			);
 			productName = Mia;
 			productReference = 1BDEE370A91BA55078665435 /* Mia.app */;
@@ -299,7 +296,7 @@
 			mainGroup = 1970AFF70544C290978C6472;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */,
+				0B1C9609C05C77E6923321EB /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2F2E7D419B4EC63D857119FC /* Products */;
@@ -346,7 +343,6 @@
 				60B9DAC6B152394C1D2AECE1 /* CaptureQueue.swift in Sources */,
 				6EEE46C89F4D305F3CC28956 /* Definitions.swift in Sources */,
 				C2287A0143A5D9A728665A9F /* Demo.swift in Sources */,
-				619680F0C1653E48BBF835AD /* KeychainSessionStorage.swift in Sources */,
 				AC7E92FB7C2F6088FF208271 /* Lemma.swift in Sources */,
 				83E90B1F57EFDF91483D7D5A /* LoginView.swift in Sources */,
 				86389984E21BD63A334CC9C2 /* MiaApp.swift in Sources */,
@@ -660,21 +656,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */ = {
+		0B1C9609C05C77E6923321EB /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/insforge/insforge-swift.git";
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
 			requirement = {
-				kind = exactVersion;
-				version = 0.0.9;
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0F067E2E3BE0DAFEDC9F59E7 /* InsForge */ = {
+		5199272A238E98A00F52CD13 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 376FAE46668CCFD29BF7B660 /* XCRemoteSwiftPackageReference "insforge-swift" */;
-			productName = InsForge;
+			package = 0B1C9609C05C77E6923321EB /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

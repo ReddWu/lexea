@@ -1,14 +1,12 @@
 import Foundation
-import InsForge
-import InsForgeAuth
-import InsForgeCore
+import Supabase
 import Observation
 import AuthenticationServices
 import CryptoKit
 
-/// Sign in with Apple (native, exchanged at /api/auth/id-token), Google (InsForge OAuth
-/// in an in-app browser sheet) or email + password.
-/// New email accounts confirm with the 6-digit code InsForge emails them;
+/// Sign in with Apple (native ID token), Google (Supabase OAuth in an in-app
+/// browser sheet) or email + password.
+/// New email accounts confirm with the 6-digit code Supabase emails them;
 /// verifying the code also signs the user in.
 @MainActor @Observable
 final class SessionStore {
@@ -23,14 +21,17 @@ final class SessionStore {
 
     func restore() async {
         defer { restoring = false }
-        user = try? await auth.getSession()?.user
+        user = try? await auth.session.user
     }
 
     func signInWithGoogle() async {
         error = nil
         notice = nil
         do {
-            user = try await auth.signInWithOAuthView(provider: OAuthProvider.google, redirectTo: Backend.oauthRedirect)?.user
+            user = try await auth.signInWithOAuth(
+                provider: .google, redirectTo: Backend.oauthRedirect,
+                queryParams: [(name: "prompt", value: "select_account")]
+            ).user
         } catch {
             // closing the sign-in sheet isn't worth an error message
             let ns = error as NSError
@@ -42,7 +43,7 @@ final class SessionStore {
 
     // MARK: Sign in with Apple
 
-    /// Raw nonce for the Apple request in flight; Apple signs its SHA-256 and InsForge checks it.
+    /// Raw nonce for the Apple request in flight; Apple signs its SHA-256 and Supabase checks it.
     private var appleNonce = ""
 
     func prepareAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
@@ -70,29 +71,15 @@ final class SessionStore {
         }
     }
 
-    /// SDK 0.0.9 has no id-token sign-in, so call the REST endpoint and hand the session to the SDK.
     private func exchangeAppleToken(_ token: String, name: String?) async throws {
-        var req = URLRequest(url: Backend.baseURL.appending(path: "api/auth/id-token")
-            .appending(queryItems: [URLQueryItem(name: "client_type", value: "mobile")]))
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.setValue("Bearer \(Backend.anonKey)", forHTTPHeaderField: "Authorization")
-        var body: [String: String] = ["provider": "apple", "token": token, "nonce": appleNonce]
-        if let name { body["name"] = name }
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
-            let msg = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
-            throw NSError(domain: "Echowords", code: 1, userInfo: [NSLocalizedDescriptionKey: msg ?? "Sign in with Apple failed."])
+        let session = try await auth.signInWithIdToken(
+            credentials: OpenIDConnectCredentials(provider: .apple, idToken: token, nonce: appleNonce)
+        )
+        // Apple only sends the name on the very first authorization; keep it as profile metadata
+        if let name {
+            _ = try? await auth.update(user: UserAttributes(data: ["full_name": .string(name)]))
         }
-        let dec = JSONDecoder()
-        dec.dateDecodingStrategy = iso8601WithFractionalSecondsDecodingStrategy()
-        let res = try dec.decode(AuthResponse.self, from: data)
-        guard let access = res.accessToken else { throw NSError(domain: "Echowords", code: 2, userInfo: [NSLocalizedDescriptionKey: "Sign in with Apple failed."]) }
-        try await Backend.sessionStorage.saveSession(Session(accessToken: access, refreshToken: res.refreshToken, user: res.user))
-        // getSession() loads the stored session into the SDK and switches its auth headers
-        user = try await auth.getSession()?.user
+        user = session.user
     }
 
     func signIn(email: String, password: String) async {
@@ -100,7 +87,7 @@ final class SessionStore {
             do {
                 self.user = try await self.auth.signIn(email: email, password: password).user
             } catch where Self.isUnverified(error) {
-                try? await self.auth.sendEmailVerification(email: email)
+                try? await self.auth.resend(email: email, type: .signup)
                 self.pendingVerification = email
                 self.notice = "Check \(email) for a 6-digit code."
             }
@@ -110,8 +97,8 @@ final class SessionStore {
     func signUp(email: String, password: String) async {
         await run {
             let res = try await self.auth.signUp(email: email, password: password)
-            if let u = res.user, res.accessToken != nil {
-                self.user = u
+            if let session = res.session {
+                self.user = session.user
             } else {
                 self.pendingVerification = email
                 self.notice = "We sent a 6-digit code to \(email)."
@@ -122,7 +109,7 @@ final class SessionStore {
     func verify(code: String) async {
         guard let email = pendingVerification else { return }
         await run {
-            self.user = try await self.auth.verifyEmail(email: email, otp: code).user
+            self.user = try await self.auth.verifyOTP(email: email, token: code, type: .signup).user
             self.pendingVerification = nil
         }
     }
@@ -130,7 +117,7 @@ final class SessionStore {
     func resendCode() async {
         guard let email = pendingVerification else { return }
         await run {
-            try await self.auth.sendEmailVerification(email: email)
+            try await self.auth.resend(email: email, type: .signup)
             self.notice = "New code sent to \(email)."
         }
     }
@@ -144,7 +131,7 @@ final class SessionStore {
     /// removes the auth user; the app's tables cascade from it).
     func deleteAccount() async {
         await run {
-            try await Backend.client.database.rpc("delete_my_account").execute()
+            try await Backend.client.rpc("delete_my_account").execute()
             try? await self.auth.signOut()
             self.user = nil
         }
@@ -162,7 +149,7 @@ final class SessionStore {
     }
 
     private static func message(_ e: Error) -> String {
-        if case let InsForgeError.httpError(_, message, _, _) = e { return message }
+        if let e = e as? AuthError { return e.message }
         return (e as? LocalizedError)?.errorDescription ?? e.localizedDescription
     }
 }

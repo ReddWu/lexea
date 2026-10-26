@@ -12,7 +12,7 @@ export default function SupportPage() {
   return (
     <div className="container" style={{ maxWidth: 680 }}>
       <h1 className="page-title">Echowords Support</h1>
-      <p className="page-sub">Help for the Echowords iPhone app, the Mia browser extension and this website.</p>
+      <p className="page-sub">Help for the Echowords iPhone app, the Echowords browser extension and this website.</p>
 
       <h2 style={h2}>Contact</h2>
       <p style={p}>Email {mail}. We usually reply within two business days.</p>

@@ -1,4 +1,5 @@
 import Foundation
+import Supabase
 
 /// Looks up what a card's back should say. Same sources as the website:
 /// the Mia backend /api/define (LLM: simple English + 中文 + reading) and
@@ -31,9 +32,9 @@ enum Definitions {
             return (data, (resp as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        guard let token = try await Backend.client.auth.getAccessToken() else { throw URLError(.userAuthenticationRequired) }
+        guard let token = try? await Backend.client.auth.session.accessToken else { throw URLError(.userAuthenticationRequired) }
         var (data, status) = try await call(token)
-        if status == 401, let fresh = try? await Backend.client.auth.refreshAccessToken().accessToken {
+        if status == 401, let fresh = try? await Backend.client.auth.refreshSession().accessToken {
             (data, status) = try await call(fresh)
         }
         guard status == 200 else { throw URLError(.badServerResponse) }

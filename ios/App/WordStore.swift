@@ -1,6 +1,5 @@
 import Foundation
-import InsForge
-import InsForgeDatabase
+import Supabase
 import Observation
 
 /// The signed-in user's word list. `public.words` is the source of truth;
@@ -14,7 +13,7 @@ final class WordStore {
     var error: String?
 
     private var userId: String?
-    private var db: DatabaseClient { Backend.client.database }
+    private var db: SupabaseClient { Backend.client }
 
     // MARK: lifecycle
 
@@ -42,7 +41,7 @@ final class WordStore {
         await ingestPending()
         do {
             let rows: [WordRecord] = try await db.from("words").select()
-                .order("due", ascending: true).limit(2000).execute()
+                .order("due", ascending: true).limit(2000).execute().value
             words = rows
             error = nil
             saveCache()
@@ -64,7 +63,7 @@ final class WordStore {
         let lemma = Lemma.resolve(surface, lang: lang, existing: words.filter { $0.lang == lang }.map(\.lemma))
 
         let existing: [WordRecord] = try await db.from("words").select()
-            .eq("lemma", value: lemma).eq("lang", value: lang).limit(1).execute()
+            .eq("lemma", value: lemma).eq("lang", value: lang).limit(1).execute().value
 
         let saved: WordRecord
         if var cur = existing.first, let id = cur.id {
@@ -76,14 +75,15 @@ final class WordStore {
                 cur.context = s
             }
             let patch = WordPatch(context: cur.context, contexts: cur.contexts, updatedAt: Date())
-            let rows: [WordPatch] = try await db.from("words").eq("id", value: id).update(patch)
+            let rows: [WordPatch] = try await db.from("words").update(patch).eq("id", value: id)
+                .select().execute().value
             guard !rows.isEmpty else { throw StoreError.notFound }
             cur.updatedAt = patch.updatedAt
             saved = cur
         } else {
             let rec = WordRecord.new(word: surface, lemma: lemma, lang: lang, sentence: sentence,
                                      url: url, title: title, userId: userId)
-            saved = try await db.from("words").insert(rec)
+            saved = try await db.from("words").insert(rec).select().single().execute().value
         }
         upsertLocal(saved)
         return saved
@@ -122,7 +122,7 @@ final class WordStore {
         let patch = WordPatch(state: r.state, due: r.due, ease: r.ease, intervalDays: r.intervalDays,
                               reps: r.reps, lapses: r.lapses, lastReview: r.lastReview, updatedAt: r.lastReview)
         do {
-            let _: [WordPatch] = try await db.from("words").eq("id", value: id).update(patch)
+            try await db.from("words").update(patch).eq("id", value: id).execute()
         } catch {
             self.error = "Couldn't save review: \(describe(error))"
         }
@@ -139,7 +139,7 @@ final class WordStore {
         if w.phonetic == nil, let r = d.reading { patch.phonetic = r; updated.phonetic = r }
         guard !patch.isEmpty else { return w }
         upsertLocal(updated)
-        _ = try? await db.from("words").eq("id", value: id).update(patch) as [WordPatch]
+        _ = try? await db.from("words").update(patch).eq("id", value: id).execute()
         return updated
     }
 
@@ -148,14 +148,14 @@ final class WordStore {
         var updated = w
         updated.status = status
         upsertLocal(updated)
-        _ = try? await db.from("words").eq("id", value: id).update(WordPatch(status: status, updatedAt: Date())) as [WordPatch]
+        _ = try? await db.from("words").update(WordPatch(status: status, updatedAt: Date())).eq("id", value: id).execute()
     }
 
     func delete(_ w: WordRecord) async {
         guard let id = w.id else { return }
         words.removeAll { $0.id == id }
         saveCache()
-        do { try await db.from("words").eq("id", value: id).delete() } catch { self.error = describe(error) }
+        do { try await db.from("words").delete().eq("id", value: id).execute() } catch { self.error = describe(error) }
     }
 
     // MARK: helpers

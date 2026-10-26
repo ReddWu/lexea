@@ -33,12 +33,12 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>InsForgeAnonKey</key>
-	<string>$(INSFORGE_ANON_KEY)</string>
-	<key>InsForgeURL</key>
-	<string>$(INSFORGE_URL)</string>
 	<key>MiaWebURL</key>
 	<string>$(MIA_WEB_URL)</string>
+	<key>SupabaseKey</key>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>SupabaseURL</key>
+	<string>$(SUPABASE_URL)</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

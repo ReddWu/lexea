@@ -1,6 +1,6 @@
 // review.js — in-extension spaced-repetition (SM-2) review. Pure local:
 // reads/writes chrome.storage.local; if cloud sync is on, the background worker
-// mirrors each graded card to InsForge.
+// mirrors each graded card to the Echowords backend.
 
 const DAY = 86400000;
 const NEW_PER_SESSION = 20; // cap brand-new cards per session

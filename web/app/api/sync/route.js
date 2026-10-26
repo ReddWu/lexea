@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 // POST /api/sync — upsert a full word record from the browser extension.
 // The extension is the local-first source of truth; this mirrors its records
-// into InsForge so the tutor/dashboard see them. Requires the user's JWT
+// into Supabase so the tutor/dashboard see them. Requires the user's JWT
 // (Authorization: Bearer) — RLS scopes every row to that user.
 import { getWordByLemma, patchWord, insertWord, configured, getToken } from "../../../lib/cloud";
 
@@ -30,7 +30,7 @@ export async function OPTIONS() {
 
 export async function POST(req) {
   if (!configured()) return json({ error: "backend not configured" }, 500);
-  const token = getToken(req);
+  const token = await getToken(req);
   if (!token) return json({ error: "unauthorized" }, 401);
 
   let rec;

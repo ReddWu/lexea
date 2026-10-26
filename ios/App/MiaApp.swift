@@ -42,7 +42,7 @@ struct RootView: View {
         }
         .task { await session.restore() }
         .task(id: session.user?.id) {
-            if let id = session.user?.id {
+            if let id = session.user?.id.uuidString.lowercased() {
                 tutor.start(userId: id)
                 await store.start(userId: id)
             } else {

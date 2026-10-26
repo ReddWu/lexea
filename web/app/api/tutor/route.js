@@ -303,7 +303,7 @@ async function updateProfile(token, oldProfile, history) {
 export async function POST(req) {
   if (!configured()) return NextResponse.json({ error: "backend not configured" }, { status: 500 });
   if (!llmConfigured()) return NextResponse.json({ error: "LLM not configured" }, { status: 500 });
-  const token = getToken(req);
+  const token = await getToken(req);
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body;

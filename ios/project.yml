@@ -16,9 +16,9 @@ settings:
     DEVELOPMENT_TEAM: JBGQGJ6A3C
     CODE_SIGN_STYLE: Automatic
 packages:
-  InsForge:
-    url: https://github.com/insforge/insforge-swift.git
-    exactVersion: 0.0.9
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    from: 2.0.0
 targets:
   Mia:
     type: application
@@ -27,7 +27,7 @@ targets:
       - App
       - Shared
     dependencies:
-      - package: InsForge
+      - package: Supabase
       - target: MiaShare
     entitlements:
       path: App/Mia.entitlements
@@ -45,8 +45,8 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.reddwu.mia.auth
             CFBundleURLSchemes: [mia]
-        InsForgeURL: $(INSFORGE_URL)
-        InsForgeAnonKey: $(INSFORGE_ANON_KEY)
+        SupabaseURL: $(SUPABASE_URL)
+        SupabaseKey: $(SUPABASE_PUBLISHABLE_KEY)
         MiaWebURL: $(MIA_WEB_URL)
         # only standard HTTPS — exempt; skips the export-compliance prompt on every upload
         ITSAppUsesNonExemptEncryption: false

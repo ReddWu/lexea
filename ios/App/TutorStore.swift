@@ -116,9 +116,9 @@ final class TutorStore {
             let (bytes, resp) = try await URLSession.shared.bytes(for: req)
             return (bytes, (resp as? HTTPURLResponse)?.statusCode ?? 0)
         }
-        guard let token = try await Backend.client.auth.getAccessToken() else { throw TutorError.signedOut }
+        guard let token = try? await Backend.client.auth.session.accessToken else { throw TutorError.signedOut }
         let first = try await call(token)
-        if first.1 == 401, let fresh = try? await Backend.client.auth.refreshAccessToken().accessToken {
+        if first.1 == 401, let fresh = try? await Backend.client.auth.refreshSession().accessToken {
             return try await call(fresh)
         }
         return first

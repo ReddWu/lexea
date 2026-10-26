@@ -1,23 +1,23 @@
-export const metadata = { title: "Echowords (Mia) — Privacy Policy" };
+export const metadata = { title: "Echowords — Privacy Policy" };
 
 export default function PrivacyPage() {
   return (
     <div className="container" style={{ maxWidth: 680 }}>
       <h1 className="page-title">Privacy Policy</h1>
       <p className="page-sub">
-        For the Echowords iPhone app, the Mia browser extension and mia-tutor.vercel.app. Last updated October 17, 2026.
+        For the Echowords iPhone app, the Echowords browser extension and mia-tutor.vercel.app. Last updated October 17, 2026.
       </p>
 
-      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Mia collects</h2>
+      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Echowords collects</h2>
       <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-        When you select a word or short phrase and click <b>Save to Mia</b>, the extension stores: the selected text, the
+        When you select a word or short phrase and click <b>Save to Echowords</b>, the extension stores: the selected text, the
         sentence it appeared in, and the URL and title of the page you found it on. Nothing is
         collected from pages where you don&apos;t save a word — the extension never reads or
         transmits your browsing history, page contents, or anything you didn&apos;t explicitly
         save.
       </p>
       <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-        If you sign in with Google, Mia stores your Google account&apos;s email address, display
+        If you sign in with Google, Echowords stores your Google account&apos;s email address, display
         name, and avatar to identify your library. Signing in is optional — without it the
         extension works fully locally and nothing leaves your device.
       </p>
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
           those lookups never leave your machine.
         </li>
         <li>
-          <b>Mia&apos;s backend.</b> When you are signed in, saved words sync to your private,
+          <b>Echowords&apos;s backend.</b> When you are signed in, saved words sync to your private,
           per-account library (mia-tutor.vercel.app) so flashcards and tutoring sessions stay in
           step across the web app. Your words are only visible to your account.
         </li>
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
         <li>
           <b>Saved words.</b> Words you save from the Share sheet or add in the app are stored with the
           sentence and page title or link they came from, in your private library on our backend
-          (InsForge). Row-level security limits every query to your own account.
+          (Supabase). Row-level security limits every query to your own account.
         </li>
         <li>
           <b>Tutor chat.</b> Messages you send in the Tutor tab, together with the words you are learning,
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Mia doesn&apos;t do</h2>
+      <h2 style={{ font: "600 18px/1.3 var(--sans)", marginTop: 36 }}>What Echowords doesn&apos;t do</h2>
       <ul style={{ color: "var(--muted)", lineHeight: 1.9, paddingLeft: 22 }}>
         <li>No ads, no analytics trackers, no selling or sharing of your data with third parties.</li>
         <li>No collection of passwords, payment details, or form input.</li>

@@ -1,29 +1,30 @@
 // background.js — local-first store. Words live in chrome.storage.local
 // (one key per word: "w:<lemma>" for English, "w:<lang>:<lemma>" otherwise).
-// Each capture is ALSO mirrored through the Echowords backend (Next.js → InsForge)
-// when the user is signed in — best-effort, non-blocking, no keys in the
+// Each capture is ALSO mirrored through the Echowords backend (Next.js → Supabase)
+// when the user is signed in — best-effort, non-blocking, no secret keys in the
 // extension. Override the backend base URL via chrome.storage `miaBase`.
 
 const KEY = (lemma, lang) => (!lang || lang === "en" ? "w:" + lemma : `w:${lang}:${lemma}`);
 const nowISO = () => new Date().toISOString();
 const DEFAULT_MIA_BASE = "https://mia-tutor.vercel.app"; // set chrome.storage `miaBase` to http://localhost:3002 for local dev
-const INSFORGE_HOST = "https://kv54z32g.us-east.insforge.app"; // auth only; data flows through the Echowords backend
+const SUPABASE_URL = "https://mpuzorimmmcgpjgbekkx.supabase.co"; // auth only; data flows through the Echowords backend
+const SUPABASE_KEY = "sb_publishable_A8tPtsGkIf0Tv73asZiNoA_YmvrkTbs"; // publishable — safe to ship, RLS guards the data
 
 async function miaBase() {
   const { miaBase } = await chrome.storage.local.get("miaBase");
   return (miaBase || DEFAULT_MIA_BASE).replace(/\/+$/, "");
 }
 
-// --- auth: Google sign-in via InsForge (PKCE, client_type=desktop) ---------
+// --- auth: Google sign-in via Supabase (PKCE) ------------------------------
 // Session { accessToken, refreshToken, email, name } lives in storage.
 // authFetch() attaches the token and transparently refreshes once on 401.
 
 async function getSession() {
   const { miaSession } = await chrome.storage.local.get("miaSession");
   if (!miaSession) return null;
-  // a session minted by another auth backend (e.g. before the 2026-10 move)
-  // can never refresh here — drop it so the UI asks for a fresh sign-in
-  if (miaSession.host !== INSFORGE_HOST) {
+  // a session minted by another auth backend (e.g. InsForge before the
+  // 2026-10 move) can never refresh here — drop it so the UI asks for a fresh sign-in
+  if (miaSession.host !== SUPABASE_URL) {
     await chrome.storage.local.remove("miaSession");
     return null;
   }
@@ -37,6 +38,15 @@ function b64url(bytes) {
     .replace(/=+$/, "");
 }
 
+// POST /auth/v1/token — shared by the PKCE exchange and refresh grants.
+async function tokenRequest(grant, body) {
+  return fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=${grant}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+    body: JSON.stringify(body),
+  });
+}
+
 async function signIn() {
   const raw = crypto.getRandomValues(new Uint8Array(32));
   const verifier = b64url(raw);
@@ -44,32 +54,24 @@ async function signIn() {
   const challenge = b64url(digest);
   const redirectUri = chrome.identity.getRedirectURL();
 
-  const init = await fetch(
-    `${INSFORGE_HOST}/api/auth/oauth/google?redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&code_challenge=${challenge}&prompt=select_account`
-  );
-  if (!init.ok) throw new Error(`oauth init ${init.status}`);
-  const { authUrl } = await init.json();
-  if (!authUrl) throw new Error("no authUrl");
-
+  const authUrl =
+    `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUri)}` +
+    `&code_challenge=${challenge}&code_challenge_method=s256&prompt=select_account`;
   const finalUrl = await chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true });
-  const code = new URL(finalUrl).searchParams.get("insforge_code");
+  const code = new URL(finalUrl).searchParams.get("code");
   if (!code) throw new Error("sign-in cancelled");
 
-  const ex = await fetch(`${INSFORGE_HOST}/api/auth/oauth/exchange?client_type=desktop`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code, code_verifier: verifier }),
-  });
+  const ex = await tokenRequest("pkce", { auth_code: code, code_verifier: verifier });
   if (!ex.ok) throw new Error(`exchange ${ex.status}`);
   const data = await ex.json();
-  if (!data.accessToken) throw new Error("no access token");
+  if (!data.access_token) throw new Error("no access token");
+  const meta = data.user?.user_metadata || {};
   const session = {
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken || null,
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token || null,
     email: data.user?.email || null,
-    name: data.user?.profile?.name || data.user?.email || null,
-    host: INSFORGE_HOST,
+    name: meta.full_name || meta.name || data.user?.email || null,
+    host: SUPABASE_URL,
   };
   await chrome.storage.local.set({ miaSession: session });
   return session;
@@ -86,11 +88,7 @@ async function refreshSession() {
     const s = await getSession();
     if (!s?.refreshToken) return false;
     try {
-      const res = await fetch(`${INSFORGE_HOST}/api/auth/refresh?client_type=desktop`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: s.refreshToken }),
-      });
+      const res = await tokenRequest("refresh_token", { refresh_token: s.refreshToken });
       if (!res.ok) {
         await signOut(); // refresh token expired/revoked — require a new sign-in
         return false;
@@ -99,8 +97,8 @@ async function refreshSession() {
       await chrome.storage.local.set({
         miaSession: {
           ...s,
-          accessToken: data.accessToken || s.accessToken,
-          refreshToken: data.refreshToken || s.refreshToken,
+          accessToken: data.access_token || s.accessToken,
+          refreshToken: data.refresh_token || s.refreshToken,
         },
       });
       return true;

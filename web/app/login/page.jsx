@@ -16,7 +16,7 @@ function LoginInner() {
 
   return (
     <div className="login">
-      <h1>Mia</h1>
+      <h1>Echowords</h1>
       <p style={{ color: "var(--muted)", margin: "10px 0 24px" }}>
         Your words, your library — sign in to sync across devices.
       </p>

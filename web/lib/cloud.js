@@ -1,28 +1,29 @@
-// Server-only InsForge data access (imported only by /api route handlers).
+// Server-only Supabase data access (imported only by /api route handlers).
 // Every call runs with the END USER's JWT — RLS on `words` / `learner_profile`
 // scopes rows to that user. Callers get the token via getToken(req): the
-// browser sends it as the `insforge_access_token` cookie (set by the SSR auth
-// helpers), the extension as an `Authorization: Bearer` header.
-
-const HOST = (process.env.INSFORGE_OSS_HOST || process.env.NEXT_PUBLIC_INSFORGE_URL || "").replace(/\/+$/, "");
+// extension and iOS app send it as `Authorization: Bearer`, the browser via
+// the @supabase/ssr session cookies.
+import { SUPABASE_URL as HOST, SUPABASE_KEY, createRouteClient } from "./supabase";
 
 export function configured() {
-  return Boolean(HOST);
+  return Boolean(HOST && SUPABASE_KEY);
 }
 
-// Authorization header (extension) first, then the SSR access-token cookie (web).
-export function getToken(req) {
+// Authorization header (extension / iOS) first, then the SSR session cookie (web).
+export async function getToken(req) {
   const h = req.headers.get("authorization") || "";
   const m = h.match(/^Bearer\s+(.+)$/i);
   if (m) return m[1];
-  return req.cookies?.get?.("insforge_access_token")?.value || null;
+  if (!req.cookies?.getAll || !configured()) return null;
+  const { data } = await createRouteClient(req, null).auth.getSession();
+  return data?.session?.access_token || null;
 }
 
 export async function validateToken(token) {
-  if (!token || !HOST) return false;
+  if (!token || !configured()) return false;
   try {
-    const res = await fetch(`${HOST}/api/auth/sessions/current`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await fetch(`${HOST}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     return res.ok;
@@ -43,7 +44,7 @@ export function userIdFromToken(token) {
 }
 
 function headers(token, extra) {
-  return { Authorization: `Bearer ${token}`, ...extra };
+  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, ...extra };
 }
 
 async function expectOk(res, what) {
@@ -56,7 +57,7 @@ async function expectOk(res, what) {
   return res;
 }
 
-const REC = `${HOST}/api/database/records`;
+const REC = `${HOST}/rest/v1`;
 
 export async function listWords(token, lang) {
   const langFilter = lang ? `&lang=eq.${encodeURIComponent(lang)}` : "";

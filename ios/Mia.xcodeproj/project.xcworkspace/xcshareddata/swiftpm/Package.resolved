@@ -1,40 +1,67 @@
 {
-  "originHash" : "0a0d22a7d9faabef1a4dcb2269a82d6a87e73ca7f5a27fcd3d58a496719f1bc9",
+  "originHash" : "ccc727310637079b7355ccf59e7d153c26677020c1a43e177b78cc9df7963c0f",
   "pins" : [
     {
-      "identity" : "insforge-swift",
+      "identity" : "supabase-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/insforge/insforge-swift.git",
+      "location" : "https://github.com/supabase/supabase-swift.git",
       "state" : {
-        "revision" : "466bfed300dba16e35bd2aa93bf040ad0e4c83bf",
-        "version" : "0.0.9"
+        "revision" : "fee4bd78997f8b4e919c1c9711e0cfb346fd7a55",
+        "version" : "2.55.4"
       }
     },
     {
-      "identity" : "socket.io-client-swift",
+      "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/socketio/socket.io-client-swift.git",
+      "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "42da871d9369f290d6ec4930636c40672143905b",
-        "version" : "16.1.1"
+        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
+        "version" : "1.7.3"
       }
     },
     {
-      "identity" : "starscream",
+      "identity" : "swift-clocks",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/daltoniam/Starscream",
+      "location" : "https://github.com/pointfreeco/swift-clocks",
       "state" : {
-        "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
-        "version" : "4.0.8"
+        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204",
+        "version" : "1.1.1"
       }
     },
     {
-      "identity" : "swift-log",
+      "identity" : "swift-concurrency-extras",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-log.git",
+      "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
       "state" : {
-        "revision" : "4038b6a4f74a1426f47eb1dd5b4bb5628a15d597",
-        "version" : "1.16.1"
+        "revision" : "8a4260f7373493435bd21194585c95b72bfdd401",
+        "version" : "1.4.3"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "da9d28d69ebe3894b18376c8f2395c2f37b8448f",
+        "version" : "4.5.2"
+      }
+    },
+    {
+      "identity" : "swift-http-types",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-http-types.git",
+      "state" : {
+        "revision" : "bff4b6903cdc99dda49649dd52f46c11cfd3ed50",
+        "version" : "1.8.0"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     }
   ],

@@ -44,7 +44,7 @@ export async function OPTIONS() {
 
 export async function POST(req) {
   if (!BASE || !KEY) return json({ error: "LLM not configured" }, 500);
-  const token = getToken(req);
+  const token = await getToken(req);
   if (!(await validateToken(token))) return json({ error: "unauthorized" }, 401);
   let body;
   try {

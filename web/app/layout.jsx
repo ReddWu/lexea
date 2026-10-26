@@ -3,9 +3,9 @@ import Link from "next/link";
 import AuthNav from "./AuthNav";
 
 export const metadata = {
-  title: "Mia — the words you save show up in every conversation",
+  title: "Echowords — the words you save show up in every conversation",
   description:
-    "Save words while you read. Mia schedules them on your forgetting curve and weaves them back into natural AI conversation.",
+    "Save words while you read. Echowords schedules them on your forgetting curve and weaves them back into natural AI conversation.",
 };
 
 export default function RootLayout({ children }) {
@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <nav className="topnav">
           <Link className="brand" href="/">
-            Mia
+            Echowords
           </Link>
           <div className="navlinks">
             <Link href="/">Library</Link>
